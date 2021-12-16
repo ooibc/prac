@@ -30,14 +30,14 @@ func (c *LevelStateManager) Finish(shardSet []string, results *KvResult, comLeve
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	CrashF, NetF := false, false // For level 3, no failure.
+	CrashF, NetF := make(map[string]bool), false // For level 3, no failure.
 
 	if results != nil {
-		CrashF, NetF = results.Analysis(comLevel)
+		CrashF, NetF = results.Analysis(shardSet, comLevel)
 	}
 
 	for _, i := range shardSet {
-		err := c.states[i].Next(CrashF, NetF, comLevel)
+		err := c.states[i].Next(CrashF[i], NetF, comLevel)
 		if err != nil {
 			return err
 		}

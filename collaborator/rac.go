@@ -7,7 +7,6 @@ import (
 	"github.com/allvphx/RAC/rlsm"
 	"github.com/allvphx/RAC/utils"
 	"strconv"
-	"sync/atomic"
 	"time"
 )
 
@@ -82,9 +81,10 @@ func (ra *DBTransaction) RACPropose(txn *DBTransaction, lev rlsm.Level) *rlsm.Kv
 			return nil
 		}
 	}
+	lostvt := ans.CanCommit4L2()
 	rem := N - len(ra.from.MsgPool[ra.TxnID])
 	for rem > 0 {
-		ans.Append(rlsm.KvResMakeLost(0))
+		ans.Append(rlsm.KvResMakeLost(lostvt))
 		rem--
 	}
 	ra.from.LockPool[ra.TxnID].Unlock()
@@ -102,7 +102,7 @@ func (ra *DBTransaction) Decide4RAC(txn *DBTransaction, isCommitted bool) bool {
 		go ra.sendDecide4RAC(i, op, isCommitted)
 	}
 
-	for st := time.Now(); time.Since(st) < 2*txn.TimeOut+constants.OptEps; {
+	for st := time.Now(); time.Since(st) < txn.TimeOut+constants.OptEps; {
 		if ra.checkRACF(false) {
 			return false
 		}
@@ -114,9 +114,7 @@ func (ra *DBTransaction) Decide4RAC(txn *DBTransaction, isCommitted bool) bool {
 	return false
 }
 
-var failedcnt1 int32 = 0
-
-// ProposeAdSubmit submit the write only transaction to the KVs with level 1 ~ 2.
+// RACSubmit submit the write only transaction to the KVs with level 1 ~ 2.
 func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bool {
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, Propose) {
 		return false
@@ -124,8 +122,7 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	lev := ra.from.Lsm.Start(write.participants)
 
 	if lev == rlsm.CFNF {
-		ra.from.Lsm.Finish(ra.participants, nil, lev)
-		//		println("3PC count")
+		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev))
 		if !ra.from.CheckAndChange(ra.TxnID, Propose, PreRead) {
 			return false
 		}
@@ -142,14 +139,8 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	}
 
 	ok := result.DecideAllCommit()
-	//	println("Decide = ", ok)
-	var correctness bool
-	if correctness = result.Correct(); correctness {
-	} else if !ok {
-		//		println("err")
-	}
-	//	println("Correctness = ", correctness)
-	if !correctness { // trigger the blocking decide.
+	if correctness := result.Correct(); !correctness {
+		// trigger the blocking decide.
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed with validation error")
 		//// blocking commit ////
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed at propose")
@@ -165,22 +156,18 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 
 	/// the unblocking way ///
 	if !ok {
-		now := atomic.AddInt32(&failedcnt1, 1)
-		if now%2000 == 0 {
-			//			println("Failed at propose for", now)
-		}
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed at propose")
-
 		if !ra.from.CheckAndChange(ra.TxnID, Propose, Aborted) {
 			ra.Decide42PC(write, false) // blocking 2 delays.
-			//			No need to send abort since the transaction has been all aborted.
-			return false
 		}
+		// No need to send abort since the transaction has been all aborted.
+		return false
 	} else if !ra.from.CheckAndChange(ra.TxnID, Propose, Committed) {
 		ra.Decide42PC(write, false) // blocking 2 delays.
 		return false
 	}
 
-	ra.Decide4RAC(write, ok) // same as 3PC
+	// future work: stable log for commit here.
+	ra.Decide4RAC(write, ok) // ok = commit
 	return ok
 }

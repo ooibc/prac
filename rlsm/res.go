@@ -34,12 +34,12 @@ func (c *KvRes) SetSelfResult(vote bool, commit bool) {
 	c.VoteCommit = vote
 }
 
-//MakeLost make a lost item with id.
-func KvResMakeLost(id int) *KvRes {
+//KvResMakeLost make a lost item with decision
+func KvResMakeLost(decision bool) *KvRes {
 	return &KvRes{
-		TID:        id,
-		VoteCommit: false,
-		IsCommit:   false,
+		TID:        0,
+		VoteCommit: decision,
+		IsCommit:   decision,
 	}
 }
 
@@ -78,6 +78,11 @@ func (re *KvResult) Init(nShard int) {
 	re.KvIDs = make([]int, nShard)
 	re.ips = 0
 	re.mu = &sync.Mutex{}
+}
+
+// CanCommit4L2: check the Special case mentioned in paper.
+func (re *KvResult) CanCommit4L2() bool {
+	return re.decideCommit == re.ips && re.ips > 1
 }
 
 func (re *KvResult) DecideAllCommit() bool {
@@ -136,30 +141,26 @@ func (re *KvResult) decideSomeCommit() bool {
 	return !re.decideAllCommit() && re.decideCommit > 0
 }
 
-func (re *KvResult) detectCrashFailure(level Level) bool {
+func (re *KvResult) detectCrashFailure(shards []string) map[string]bool {
 	re.crashedCnt = 0
-	for _, p := range re.notCrashed {
+	res := make(map[string]bool)
+	for i, p := range re.notCrashed {
+		res[shards[i]] = !p
 		if !p {
 			re.crashedCnt++
 		}
 	}
-	return re.crashedCnt > 0
+	return res
 }
 
 // Analysis analysis the result of an atomic commit (bool CrashFailure, bool NetworkFailure, error).
 // Property 4.5 (All broadcast) assumed to be held.
 // The crash failure should be handled in collaborator before !!!.
-func (re *KvResult) Analysis(level Level) (bool, bool) {
-	crashFailure := re.detectCrashFailure(level)
+func (re *KvResult) Analysis(shards []string, level Level) (map[string]bool, bool) {
+	crashFailure := re.detectCrashFailure(shards)
 	if level == NoCFNoNF {
-		if re.VoteAllCommit() && !re.decideAllCommit() { // Property 4.1
-			utils.Assert(false, "Prop 4.1 violated")
-			return crashFailure, false
-		} else if re.decideSomeCommit() && re.voteSomeCommit() {
-			// Property 4.6
-			if re.crashedCnt+re.decideCommit == re.NShard {
-				return crashFailure, false
-			} else { // Property 4.2, 4.4
+		if re.decideSomeCommit() && re.voteSomeCommit() {
+			if re.crashedCnt+re.decideCommit != re.NShard {
 				return crashFailure, true
 			}
 		}
