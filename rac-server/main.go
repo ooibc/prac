@@ -28,7 +28,7 @@ func init() {
 	flag.StringVar(&part, "node", "ca", "the node to start")
 	flag.StringVar(&bench, "bench", "tpc", "the benchmark used for the test")
 	flag.StringVar(&protocol, "p", "rac", "the protocol used for this test")
-	flag.StringVar(&addr, "addr", "10.148.0.2:2001", "the address for this node")
+	flag.StringVar(&addr, "addr", "127.0.0.1:5001", "the address for this node")
 	flag.IntVar(&con, "c", 1000, "the number of client used for test")
 	flag.IntVar(&tl, "tl", 25, "the timeout for started cohort node")
 

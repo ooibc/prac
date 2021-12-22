@@ -5,7 +5,7 @@ import time
 
 pool = []
 run_server = "sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr="
-run_client_cmd  = "./bin/rac-server -node=ca -addr=10.148.0.2:2001"
+run_client_cmd  = "./bin/rac-server -node=ca -addr=127.0.0.1:5001"
 protocols = ["rac", "3pc", "2pc"]
 
 def get_client_cmd(bench, protocol, clients, r, file):
@@ -93,4 +93,3 @@ def run_per(bench, c, r = 3):
 if __name__ == '__main__':
     run_experiment("ycsb")
     run_experiment("tpc")
-#    run_crash("tpc", 1000):

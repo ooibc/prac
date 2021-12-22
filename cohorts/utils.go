@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var OU_addrs = []string{"10.170.0.2:2001", "10.140.0.2:2001", "10.140.0.3:2001"}
+var OU_addrs = []string{"127.0.0.1:6001", "127.0.0.1:6002", "127.0.0.1:6003"}
 
 func comStart() []*CohortStmt {
 	stmts := make([]*CohortStmt, 3)

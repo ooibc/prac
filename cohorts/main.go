@@ -100,7 +100,7 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
 			stmt.Stop()
 		}()
-	}
+	} // TODO: crash and recovery generator later added here
 
 	for {
 		conn, err := stmt.listener.Accept()

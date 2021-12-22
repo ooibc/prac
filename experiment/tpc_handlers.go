@@ -1,7 +1,6 @@
 package experiment
 
 import (
-	"fmt"
 	"github.com/allvphx/RAC/cohorts"
 	"github.com/allvphx/RAC/collaborator"
 	"github.com/allvphx/RAC/mockkv"
@@ -146,9 +145,6 @@ func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *in
 	if c.newOrder(client, order, parts, &latency) {
 		utils.TPrintf("NewOrder Success")
 		atomic.AddInt64(latencySum, int64(latency))
-		if utils.PutPer {
-			fmt.Println("3:" + (latency).String())
-		}
 		atomic.AddInt32(txnCount, 1)
 		atomic.AddInt32(success, 1)
 	} else {

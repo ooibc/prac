@@ -167,7 +167,7 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 		return false
 	}
 
-	// future work: stable log for commit here.
+	// TODO:future work: stable log for commit here.
 	ra.Decide4RAC(write, ok) // ok = commit
 	return ok
 }
