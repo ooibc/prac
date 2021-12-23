@@ -5,6 +5,7 @@ import (
 	"github.com/allvphx/RAC/constants"
 	"github.com/allvphx/RAC/utils"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"sync"
 	"time"
@@ -64,12 +65,22 @@ func loadConfig(stmt *CohortStmt, config *map[string]interface{}) {
 	err = json.Unmarshal([]byte(raw), &config)
 	tmp, _ := ((*config)["cohorts"]).(map[string]interface{})
 	stmt.cohorts = make([]string, 0)
-	for _, p := range tmp {
+	id_key := "1"
+	for i, p := range tmp {
 		stmt.cohorts = append(stmt.cohorts, p.(string))
+		if p.(string) == stmt.cohortID {
+			id_key = i
+		}
 	}
 	tmp, _ = ((*config)["collaborators"]).(map[string]interface{})
 	for _, p := range tmp {
 		stmt.collaborator = p.(string)
+	}
+	tmp, _ = ((*config)["delays"]).(map[string]interface{})
+	for i, p := range tmp {
+		if i == id_key {
+			constants.SetBasicT(p.(float64))
+		}
 	}
 	stmt.timeoutForLocks = constants.LockUpperBound
 	stmt.timeoutForMsgs = constants.MsgUpperBound4RAC
@@ -96,11 +107,31 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 
 	ch <- true
 	if constants.ServerTimeOut != -1 {
-		go func() {
-			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
-			stmt.Stop()
-		}()
-	} // TODO: crash and recovery generator later added here
+		if constants.ServerTimeOut == 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+			go func() {
+				state := 1
+				for {
+					if state == 1 && rand.Intn(100) < constants.FailPercental {
+						stmt.Cohort.Break()
+						state = 0
+						println("break!!!!")
+					} else if state == 0 && rand.Intn(100) < constants.RecoverPercental {
+						stmt.Cohort.Recover()
+						state = 1
+						println("recccc!!!!")
+						break
+					}
+					time.Sleep(time.Second)
+				}
+			}()
+		} else if constants.ServerTimeOut > 0 {
+			go func() {
+				time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
+				stmt.Stop()
+			}()
+		}
+	}
+	// TODO: crash and recovery generator later added here
 
 	for {
 		conn, err := stmt.listener.Accept()

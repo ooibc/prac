@@ -29,13 +29,13 @@ func init() {
 	flag.StringVar(&bench, "bench", "tpc", "the benchmark used for the test")
 	flag.StringVar(&protocol, "p", "rac", "the protocol used for this test")
 	flag.StringVar(&addr, "addr", "127.0.0.1:5001", "the address for this node")
-	flag.IntVar(&con, "c", 1000, "the number of client used for test")
-	flag.IntVar(&tl, "tl", 25, "the timeout for started cohort node")
+	flag.IntVar(&con, "c", 800, "the number of client used for test")
+	flag.IntVar(&tl, "tl", 0, "the timeout for started cohort node")
 
 	flag.BoolVar(&local, "local", false, "if the test is executed locally")
 	flag.BoolVar(&preload, "preload", false, "preload the data for tpc-c into shard")
 
-	flag.Float64Var(&r, "r", 3.0, "the factor for the rac protocol")
+	flag.Float64Var(&r, "r", 3, "the factor for the rac protocol")
 	flag.Usage = usage
 }
 
@@ -43,7 +43,7 @@ func main() {
 	flag.Parse()
 	//	println(con, r, preload, local, protocol, bench, part)
 	constants.SetConcurrency(con)
-	constants.SetMsgDelay4RAC(r)
+	constants.SetR(r)
 	constants.SetServerTimeOut(tl)
 	if local {
 		utils.SetLocal()

@@ -36,11 +36,15 @@ const Max_Txn_ID = 1000000
 
 ////// Client side constants /////
 var MsgUpperBound4RAC time.Duration = 0 // between Kvs.
+var rt float64 = 0                      // between Kvs.
 var CONCURRENCY int = 10
 var KvConcurrencyEps time.Duration = 0
 var ConcurrencyEps time.Duration = 0
 var TPCC_Protocol string = "RAC"
 var ServerTimeOut = -1
+var BasicWaitTime time.Duration = 20
+var FailPercental int = 30
+var RecoverPercental int = 20
 
 const CONTENTION int = 90
 
@@ -66,8 +70,18 @@ func SetProtocol(pro string) {
 	TPCC_Protocol = pro
 }
 
+func SetR(r float64) {
+	rt = r
+}
+
+func SetBasicT(t float64) {
+	BasicWaitTime = time.Duration(t * float64(time.Millisecond))
+	SetMsgDelay4RAC(rt)
+}
+
 func SetMsgDelay4RAC(r float64) {
-	MsgUpperBound4RAC = time.Duration(r * 20 * float64(time.Millisecond))
+	MsgUpperBound4RAC = time.Duration((r + 0.2) * float64(BasicWaitTime))
+	println(MsgUpperBound4RAC.String())
 }
 
 func Min(x, y int) int {

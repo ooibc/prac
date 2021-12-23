@@ -13,7 +13,7 @@ const Debug = false
 const ShowWarn = false
 const Test = false
 
-var LocalTest = false
+var LocalTest = true
 
 func SetLocal() {
 	LocalTest = true

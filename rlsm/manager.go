@@ -37,7 +37,7 @@ func (c *LevelStateManager) Finish(shardSet []string, results *KvResult, comLeve
 	}
 
 	for _, i := range shardSet {
-		err := c.states[i].Next(CrashF[i], NetF, comLevel)
+		err := c.states[i].Next(CrashF[i], NetF, comLevel, i)
 		if err != nil {
 			return err
 		}

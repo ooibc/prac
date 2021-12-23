@@ -81,7 +81,7 @@ func (ra *DBTransaction) RACPropose(txn *DBTransaction, lev rlsm.Level) *rlsm.Kv
 			return nil
 		}
 	}
-	lostvt := ans.CanCommit4L2()
+	lostvt := ans.CanCommit4L2() && lev == rlsm.CFNoNF
 	rem := N - len(ra.from.MsgPool[ra.TxnID])
 	for rem > 0 {
 		ans.Append(rlsm.KvResMakeLost(lostvt))

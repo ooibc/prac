@@ -41,11 +41,15 @@ collaborator:
 
 local:
 	@tc qdisc add dev lo root handle 1: prio bands 4
-	@tc qdisc add dev lo parent 1:4 handle 40: netem delay 100ms
+	@tc qdisc add dev lo parent 1:4 handle 40: netem delay 20ms 2ms
 	@tc filter add dev lo protocol ip parent 1:0 prio 4 u32  match ip dport 6001 0xffff flowid 1:4
 	@tc filter add dev lo protocol ip parent 1:0 prio 4 u32  match ip dport 6002 0xffff flowid 1:4
 	@tc filter add dev lo protocol ip parent 1:0 prio 4 u32  match ip dport 6003 0xffff flowid 1:4
 	@tc filter add dev lo protocol ip parent 1:0 prio 4 u32  match ip dport 5001 0xffff flowid 1:4
+
+del:
+	@tc filter del dev lo pref 4
+	@tc qdisc  del dev lo root
 
 ### Just for test
 micro-local-test:
@@ -60,9 +64,7 @@ tmp:
 	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=4000 -p=rac
 
 quick:
-	@go run ./rac-server/main.go ca ycsb 1000 rac 127.0.0.1:5001 >./tmp/ycsb_quick.log
-	@go run ./rac-server/main.go ca ycsb 1000 3pc 127.0.0.1:5001 >>./tmp/ycsb_quick.log
-	@go run ./rac-server/main.go ca ycsb 1000 2pc 127.0.0.1:5001 >>./tmp/ycsb_quick.log
+	@go run ./rac-server/main.go
 
 tpc-local-test:
 	@go test -v ./experiment/main_test.go ./experiment/main.go ./experiment/tpc.go -timeout 1h -test.run TestTPCCLocal
