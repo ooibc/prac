@@ -37,7 +37,7 @@ func (c *LevelStateManager) Finish(shardSet []string, results *KvResult, comLeve
 	}
 
 	for _, i := range shardSet {
-		err := c.states[i].Next(CrashF[i], NetF, comLevel)
+		err := c.states[i].Next(CrashF[i], NetF, comLevel, i)
 		if err != nil {
 			return err
 		}
@@ -53,6 +53,9 @@ func (c *LevelStateManager) synLevels(shardSet []string) Level {
 	comLevel := NoCFNoNF
 	for _, i := range shardSet {
 		comLevel = MaxLevel(comLevel, c.states[i].GetLevel())
+		if i[len(i)-1] == '1' {
+			//			println("comLevel = ", comLevel)
+		}
 	}
 	return comLevel
 }

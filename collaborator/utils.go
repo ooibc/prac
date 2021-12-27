@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var caID = "10.148.0.2:2001"
+var caID = "127.0.0.1:5001"
 
 func RemoteTestkit() *CollaboratorStmt {
 	stmt := &CollaboratorStmt{}

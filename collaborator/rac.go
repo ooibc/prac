@@ -81,7 +81,7 @@ func (ra *DBTransaction) RACPropose(txn *DBTransaction, lev rlsm.Level) *rlsm.Kv
 			return nil
 		}
 	}
-	lostvt := ans.CanCommit4L2()
+	lostvt := ans.CanCommit4L2() && lev == rlsm.CFNoNF
 	rem := N - len(ra.from.MsgPool[ra.TxnID])
 	for rem > 0 {
 		ans.Append(rlsm.KvResMakeLost(lostvt))
@@ -119,7 +119,7 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, Propose) {
 		return false
 	}
-	lev := ra.from.Lsm.Start(write.participants)
+	lev := ra.from.Lsm.Start(ra.participants)
 
 	if lev == rlsm.CFNF {
 		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev))
@@ -167,7 +167,7 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 		return false
 	}
 
-	// future work: stable log for commit here.
+	// TODO:future work: stable log for commit here.
 	ra.Decide4RAC(write, ok) // ok = commit
 	return ok
 }

@@ -194,7 +194,7 @@ func (stmt *TPCStmt) RunTPC() {
 		time.Sleep(2 * time.Millisecond)
 	}
 	utils.TPrintf("All clients Started")
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	atomic.StoreInt32(&stmt.txnCount, 0)
 	atomic.StoreInt32(&stmt.success, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
@@ -202,6 +202,7 @@ func (stmt *TPCStmt) RunTPC() {
 	for i := 0; i < 10; i++ {
 		time.Sleep(time.Second)
 	}
+	stmt.logResults()
 }
 
 func (stmt *TPCStmt) TPCC_Test(ca *collaborator.CollaboratorStmt) {

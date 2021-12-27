@@ -1,6 +1,8 @@
 package rlsm
 
 import (
+	"github.com/allvphx/RAC/constants"
+	"github.com/allvphx/RAC/lock"
 	"sync"
 )
 
@@ -12,22 +14,23 @@ const (
 	CFNF     Level = 3
 )
 
-// as mentioned in the paper.
-var H1 = 200
-var H2 = 200
-
 // LevelStateMachine is the thread safe level machine maintained on the DBMS, each shard is assigned with one.
 type LevelStateMachine struct {
-	mu     sync.Mutex
-	level  Level // the current level of shards robustness
-	noFCnt int   // the number of continuous failure-free executions.
+	id        int
+	mu        *sync.Mutex
+	he_mu     *lock.RWLocker // mutex for heurstic method, to access the model sequentially.
+	level     Level          // the current level of shards robustness
+	H         int
+	downClock int
 }
 
 func NewLSM() *LevelStateMachine {
 	return &LevelStateMachine{
-		mu:     sync.Mutex{},
-		level:  NoCFNoNF,
-		noFCnt: 0,
+		mu:        &sync.Mutex{},
+		he_mu:     lock.NewRWLocker(),
+		level:     NoCFNoNF,
+		H:         0,
+		downClock: 0,
 	}
 }
 
@@ -38,44 +41,45 @@ func (c *LevelStateMachine) GetLevel() Level {
 	return c.level
 }
 
-//Next thread safely transform the state machine with the results handled.
-func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level) error {
+//Next thread safely upward transform the state machine with the results handled.
+func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level, id string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	//TODO: Machine learning add here.
-	// We have real-time reason about H1, H2.
-	if !CrashF && !NetF {
-		c.noFCnt++
-	} else {
-		c.noFCnt = 0
-	}
-
 	// Upper transformations: comLevel only used for up.
-	if c.level < comLevel {
+	if c.level < comLevel && comLevel == CFNF {
+		// NF cannot be located to one single node.
 		c.level = comLevel
-	} else if c.level >= comLevel {
-		// the level has been updated by another client, current result is no longer valid.
-		return nil
 	}
 
-	// H1, H2 for two downward transitions.
-	if c.level == NoCFNoNF {
-		if NetF {
-			c.level = CFNF
-		} else if CrashF {
-			c.level = CFNoNF
+	if c.level <= comLevel {
+		// the level has been updated by another client, current result is no longer valid.
+		if c.level == NoCFNoNF {
+			if NetF {
+				c.level = CFNF
+				//			fmt.Println("upppppp!!!!! to NF", id)
+			} else if CrashF {
+				c.level = CFNoNF
+				//			fmt.Println("upppppp!!!!!", id)
+			}
+		} else if c.level == CFNoNF {
+			if NetF {
+				c.level = CFNF
+				//			fmt.Println("upppppp!!!!! to NF", id)
+			}
 		}
-	} else if c.level == CFNoNF {
-		if NetF {
-			c.level = CFNF
-		} else if c.noFCnt > H1 {
-			c.level = NoCFNoNF
+	}
+
+	// For downward transitions. operations that are too close are abandoned by he_mu
+	c.downClock++
+	if c.downClock == constants.DownBatchSize {
+		ok, _, _ := c.he_mu.Lock(AccessInterval)
+		level := c.level
+		if ok {
+			c.Trans(level, NetF || CrashF, id)
+			c.he_mu.Unlock()
 		}
-	} else {
-		if c.noFCnt > H2 {
-			c.level = CFNoNF
-		}
+		c.downClock = 0
 	}
 	return nil
 }

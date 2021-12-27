@@ -8,12 +8,14 @@ import (
 
 type KvRes struct { // No lost res, it is handled at the DBMS.
 	TID        int
+	ID         string
 	VoteCommit bool //VoteCommit if the KV voted to commit.
 	IsCommit   bool //IsCommit if the KV shard decide to commit,
 }
 
-func NewKvRes(id int) *KvRes {
+func NewKvRes(id int, cid string) *KvRes {
 	res := &KvRes{
+		ID:  cid,
 		TID: id,
 	}
 	res.Clear()
@@ -50,7 +52,7 @@ type KvResult struct {
 	NShard       int
 	KvIDs        []int
 	ProtocolRes  []*KvRes
-	notCrashed   []bool
+	noCrashed    map[string]bool
 	voteCommit   int
 	decideCommit int
 	crashedCnt   int
@@ -74,7 +76,7 @@ func (re *KvResult) Init(nShard int) {
 	re.decideCommit = 0
 	re.crashedCnt = 0
 	re.ProtocolRes = make([]*KvRes, nShard)
-	re.notCrashed = make([]bool, nShard)
+	re.noCrashed = make(map[string]bool)
 	re.KvIDs = make([]int, nShard)
 	re.ips = 0
 	re.mu = &sync.Mutex{}
@@ -106,7 +108,7 @@ func (re *KvResult) Append(res *KvRes) bool {
 	re.KvIDs[i] = res.TID
 	re.ProtocolRes[i] = res
 	if res.TID != 0 {
-		re.notCrashed[i] = true
+		re.noCrashed[res.ID] = true
 	}
 	if res.IsCommit {
 		re.decideCommit++
@@ -144,9 +146,9 @@ func (re *KvResult) decideSomeCommit() bool {
 func (re *KvResult) detectCrashFailure(shards []string) map[string]bool {
 	re.crashedCnt = 0
 	res := make(map[string]bool)
-	for i, p := range re.notCrashed {
-		res[shards[i]] = !p
-		if !p {
+	for _, p := range shards {
+		if !re.noCrashed[p] {
+			res[p] = true
 			re.crashedCnt++
 		}
 	}

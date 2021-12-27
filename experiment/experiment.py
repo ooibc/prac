@@ -3,15 +3,18 @@ import subprocess
 import os
 import time
 
+local = True
 pool = []
 run_server = "sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr="
-run_client_cmd  = "./bin/rac-server -node=ca -addr=10.148.0.2:2001"
+run_client_cmd  = "./bin/rac-server -node=ca -addr=127.0.0.1:5001"
 protocols = ["rac", "3pc", "2pc"]
 
-def get_client_cmd(bench, protocol, clients, r, file):
+def get_client_cmd(bench, protocol, clients, r, file, env=20, alg=1):
     return run_client_cmd + " -bench=" + str(bench) + \
            " -p=" + str(protocol) + \
            " -c=" + str(clients) + \
+           " -tl=" + str(env) + \
+           " -d=" + str(alg) + \
            " -r=" + str(r) + file
 
 with open("./config.json") as f:
@@ -39,6 +42,8 @@ def start_cohort(ext, service, r):
     return execute_cmd_in_remote(ip, cmd)
 
 def start_service_on_all(r):
+    if local:
+        return
     for id_ in config["cohorts"]:
         pool.append(start_cohort(config["cohorts"][id_], config["cohorts"][id_], r))
     print("remote started")
@@ -90,7 +95,18 @@ def run_per(bench, c, r = 3):
         if filename[1] == '.':
             filename = ">" + filename
 
+def run_heu(alg, env, bench = "tpc", c = 800, r = 3):
+    filename = ">./tmp/he/" + str(c) + "_" + str(alg) + "_" + str(env) + ".log"
+    for each in range(20):
+        start_service_on_all(r)
+        time.sleep(2)
+        p = run_task(get_client_cmd(bench, "rac", c, r, filename, env, alg))
+        p.wait()
+        terminate_service()
+        if filename[1] == '.':
+            filename = ">" + filename
+
 if __name__ == '__main__':
-    run_experiment("ycsb")
-    run_experiment("tpc")
-#    run_crash("tpc", 1000):
+    for t in range(-5, 0):
+        for i in range(6):
+            run_heu(i, t)

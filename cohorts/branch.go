@@ -27,7 +27,7 @@ func newCohortBranch(id int, kv *mockkv.Shard, manager *CohortManager) *cohortBr
 	res := &cohortBranch{
 		Kv:       kv,
 		finished: false,
-		Res:      rlsm.NewKvRes(id),
+		Res:      rlsm.NewKvRes(id, manager.stmt.cohortID),
 		from:     manager,
 		Vote:     false,
 	}
@@ -285,7 +285,9 @@ func (c *cohortBranch) Propose(tx *remote.RACTransaction) *rlsm.KvRes {
 			}
 		}
 	}
+	c.from.PoolLocks[tx.TxnID].Lock()
 	c.finished = true
+	c.from.PoolLocks[tx.TxnID].Unlock()
 	return c.Res
 }
 

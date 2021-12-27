@@ -64,12 +64,22 @@ func loadConfig(stmt *CohortStmt, config *map[string]interface{}) {
 	err = json.Unmarshal([]byte(raw), &config)
 	tmp, _ := ((*config)["cohorts"]).(map[string]interface{})
 	stmt.cohorts = make([]string, 0)
-	for _, p := range tmp {
+	id_key := "1"
+	for i, p := range tmp {
 		stmt.cohorts = append(stmt.cohorts, p.(string))
+		if p.(string) == stmt.cohortID {
+			id_key = i
+		}
 	}
 	tmp, _ = ((*config)["collaborators"]).(map[string]interface{})
 	for _, p := range tmp {
 		stmt.collaborator = p.(string)
+	}
+	tmp, _ = ((*config)["delays"]).(map[string]interface{})
+	for i, p := range tmp {
+		if i == id_key {
+			constants.SetBasicT(p.(float64))
+		}
 	}
 	stmt.timeoutForLocks = constants.LockUpperBound
 	stmt.timeoutForMsgs = constants.MsgUpperBound4RAC
@@ -95,12 +105,34 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 	utils.DPrintf("build finished for " + service)
 
 	ch <- true
-	if constants.ServerTimeOut != -1 {
+	if constants.ServerTimeOut > 0 {
 		go func() {
 			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
 			stmt.Stop()
 		}()
+	} else {
+		go func() {
+			time.Sleep(time.Second * 20)
+			stmt.Stop()
+		}()
+
+		if constants.ServerTimeOut < 0 {
+			if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+				go func() {
+					for {
+						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
+						stmt.Cohort.Break()
+						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
+						stmt.Cohort.Recover()
+					}
+				}()
+			}
+		} else if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+			// Break at the first time.
+			stmt.Cohort.Break()
+		}
 	}
+	// TODO: crash and recovery generator later added here
 
 	for {
 		conn, err := stmt.listener.Accept()

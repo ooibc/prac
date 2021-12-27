@@ -13,7 +13,7 @@ const Debug = false
 const ShowWarn = false
 const Test = false
 
-var LocalTest = false
+var LocalTest = true
 
 func SetLocal() {
 	LocalTest = true
@@ -29,9 +29,9 @@ func DPrintf(format string, a ...interface{}) {
 func TimeTrack(start time.Time, name string, TID int) {
 	tim := time.Since(start).String()
 	if name == "RAC Propose" {
-		fmt.Println("1:" + tim)
+		//	fmt.Println("1:" + tim)
 	} else if name == "RAC Decide" {
-		fmt.Println("2:" + tim)
+		//	fmt.Println("2:" + tim)
 	}
 	TPrintf("TXN" + strconv.Itoa(TID) + ": Time cost for " + name + " : " + tim)
 }
