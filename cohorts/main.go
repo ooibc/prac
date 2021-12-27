@@ -5,7 +5,6 @@ import (
 	"github.com/allvphx/RAC/constants"
 	"github.com/allvphx/RAC/utils"
 	"io/ioutil"
-	"math/rand"
 	"net"
 	"sync"
 	"time"
@@ -106,29 +105,31 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 	utils.DPrintf("build finished for " + service)
 
 	ch <- true
-	if constants.ServerTimeOut != -1 {
-		if constants.ServerTimeOut == 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
-			go func() {
-				state := 1
-				for {
-					if state == 1 && rand.Intn(100) < constants.FailPercental {
+	if constants.ServerTimeOut > 0 {
+		go func() {
+			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
+			stmt.Stop()
+		}()
+	} else {
+		go func() {
+			time.Sleep(time.Second * 20)
+			stmt.Stop()
+		}()
+
+		if constants.ServerTimeOut < 0 {
+			if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+				go func() {
+					for {
+						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
 						stmt.Cohort.Break()
-						state = 0
-						println("break!!!!")
-					} else if state == 0 && rand.Intn(100) < constants.RecoverPercental {
+						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
 						stmt.Cohort.Recover()
-						state = 1
-						println("recccc!!!!")
-						break
 					}
-					time.Sleep(time.Second)
-				}
-			}()
-		} else if constants.ServerTimeOut > 0 {
-			go func() {
-				time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
-				stmt.Stop()
-			}()
+				}()
+			}
+		} else if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+			// Break at the first time.
+			stmt.Cohort.Break()
 		}
 	}
 	// TODO: crash and recovery generator later added here

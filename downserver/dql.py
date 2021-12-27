@@ -111,11 +111,3 @@ class DQLearning(Learner):
         s_, r, done, _ = env.step(a)
         self.update_transition(np.array([s,], dtype=np.float), a, r, np.array([s_,], dtype=np.float), 0. if done else 1.)
         return s_, r, done
-
-model  = DQLearning(2,1)
-
-def action():
-    pass
-
-def report(H, success):
-    pass

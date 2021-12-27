@@ -1,7 +1,7 @@
 package rlsm
 
 import (
-	"fmt"
+	"github.com/allvphx/RAC/constants"
 	"github.com/allvphx/RAC/lock"
 	"sync"
 )
@@ -50,36 +50,34 @@ func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level, id stri
 	if c.level < comLevel && comLevel == CFNF {
 		// NF cannot be located to one single node.
 		c.level = comLevel
-	} else if c.level > comLevel {
-		// the level has been updated by another client, current result is no longer valid.
-		return nil
 	}
 
-	if c.level == NoCFNoNF {
-		if NetF {
-			c.level = CFNF
-			fmt.Println("upppppp!!!!! to NF", id)
-		} else if CrashF {
-			c.level = CFNoNF
-			fmt.Println("upppppp!!!!!", id)
-		}
-	} else if c.level == CFNoNF {
-		if NetF {
-			c.level = CFNF
-			fmt.Println("upppppp!!!!! to NF", id)
+	if c.level <= comLevel {
+		// the level has been updated by another client, current result is no longer valid.
+		if c.level == NoCFNoNF {
+			if NetF {
+				c.level = CFNF
+				//			fmt.Println("upppppp!!!!! to NF", id)
+			} else if CrashF {
+				c.level = CFNoNF
+				//			fmt.Println("upppppp!!!!!", id)
+			}
+		} else if c.level == CFNoNF {
+			if NetF {
+				c.level = CFNF
+				//			fmt.Println("upppppp!!!!! to NF", id)
+			}
 		}
 	}
 
 	// For downward transitions. operations that are too close are abandoned by he_mu
 	c.downClock++
-	if c.downClock == 100 {
+	if c.downClock == constants.DownBatchSize {
 		ok, _, _ := c.he_mu.Lock(AccessInterval)
 		level := c.level
 		if ok {
-			go func() {
-				c.trans(level, NetF || CrashF, id)
-				c.he_mu.Unlock()
-			}()
+			c.Trans(level, NetF || CrashF, id)
+			c.he_mu.Unlock()
 		}
 		c.downClock = 0
 	}

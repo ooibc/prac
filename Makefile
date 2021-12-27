@@ -1,4 +1,4 @@
-.PHONY: build run-server tpc-local-test tpc ycsb local tmp msgtest
+.PHONY: build run-server tpc-local-test tpc ycsb local tmp msgtest exp
 #include $(addr)
 #  docker run -it --network host rac:v0
 # docker run -it --name="c1" --network host rac:v0
@@ -75,3 +75,15 @@ help:
 	@echo "build 	----	build the binary for the rac-server"
 	@echo "local	----	adapt Msg queue with filter on net card to introduce local message delay"
 	@echo "serveri 	----	run cohort i, i = 0, 1, 2"
+
+buildrpc:
+	@cd downserver
+	@python -m grpc_tools.protoc --python_out=. --grpc_python_out=. -I. rpc.proto
+	@protoc --go_out=plugins=grpc:. rpc.proto
+
+exp:
+	@make build
+	@python experiment/experiment.py
+
+tmp_t:
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -tl=-3 -d=1 -r=3>./tmp/he/800_1_-3.log

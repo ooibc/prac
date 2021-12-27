@@ -1,49 +1,28 @@
 package downserver
 
-import (
-	"time"
-)
+import "github.com/allvphx/RAC/constants"
 
-const init_Cnt = 2
-
-type Simple_Learner struct {
-	level int
-	cnt   int
-	react int
+type Learner interface {
+	Send(level int, cid string)
+	Action(cid string) int
 }
 
-var tes = []Simple_Learner{Simple_Learner{level: 1, cnt: init_Cnt, react: -1},
-	Simple_Learner{level: 1, cnt: init_Cnt, react: -1},
-	Simple_Learner{level: 1, cnt: init_Cnt, react: -1}}
-
 func Send(level int, cid string) {
-	i := int(cid[len(cid)-1] - '1')
-	if level != tes[i].level {
-		// reset
-		tes[i].level = level
-		tes[i].cnt = init_Cnt
-		tes[i].react = 1
+	if constants.InitCnt > 0 {
+		i := int(cid[len(cid)-1] - '1')
+		Fixed[i].Send(level, cid)
 	} else {
-		// transition
-		tes[i].cnt--
-		if tes[i].cnt == 0 {
-			// back to initial level
-			tes[i].react = 0
-			tes[i].level = 1
-		}
+		i := int(cid[len(cid)-1] - '1')
+		QT[i].Send(level, cid)
 	}
 }
 
 func Action(cid string) int {
-	i := int(cid[len(cid)-1] - '1')
-	for {
-		rec := tes[i].react
-		if rec == -1 {
-			time.Sleep(5 * time.Millisecond)
-			continue
-		} else {
-			tes[i].react = -1
-			return int(rec)
-		}
+	if constants.InitCnt > 0 {
+		i := int(cid[len(cid)-1] - '1')
+		return Fixed[i].Action(cid)
+	} else {
+		i := int(cid[len(cid)-1] - '1')
+		return QT[i].Action(cid)
 	}
 }

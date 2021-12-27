@@ -43,9 +43,9 @@ var ConcurrencyEps time.Duration = 0
 var TPCC_Protocol string = "RAC"
 var ServerTimeOut = -1
 var BasicWaitTime time.Duration = 20
-var FailPercental int = 30
-var RecoverPercental int = 20
+var InitCnt int = 1
 
+const DownBatchSize = 50
 const CONTENTION int = 90
 
 /*
@@ -81,7 +81,11 @@ func SetBasicT(t float64) {
 
 func SetMsgDelay4RAC(r float64) {
 	MsgUpperBound4RAC = time.Duration((r + 0.2) * float64(BasicWaitTime))
-	println(MsgUpperBound4RAC.String())
+	//	println(MsgUpperBound4RAC.String())
+}
+
+func SetDown(d int) {
+	InitCnt = d
 }
 
 func Min(x, y int) int {

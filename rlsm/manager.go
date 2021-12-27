@@ -53,6 +53,9 @@ func (c *LevelStateManager) synLevels(shardSet []string) Level {
 	comLevel := NoCFNoNF
 	for _, i := range shardSet {
 		comLevel = MaxLevel(comLevel, c.states[i].GetLevel())
+		if i[len(i)-1] == '1' {
+			//			println("comLevel = ", comLevel)
+		}
 	}
 	return comLevel
 }

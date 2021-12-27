@@ -7,7 +7,7 @@ def test_frozen_lake():
     env = gym.make("FrozenLake-v1")
     env.render()
     env.reset()
-    agent = QT_Learner(env.action_space, env.observation_space.n)
+    agent = QT_Learner(env.action_space.n, env.observation_space.n)
 
     middle_win = 0
     for epoch in range(10000):

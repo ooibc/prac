@@ -13,6 +13,7 @@ var (
 	protocol string
 	con      int
 	tl       int
+	down     int
 	bench    string
 	local    bool
 	preload  bool
@@ -27,10 +28,11 @@ func usage() {
 func init() {
 	flag.StringVar(&part, "node", "ca", "the node to start")
 	flag.StringVar(&bench, "bench", "tpc", "the benchmark used for the test")
-	flag.StringVar(&protocol, "p", "rac", "the protocol used for this test")
+	flag.StringVar(&protocol, "p", "3pc", "the protocol used for this test")
 	flag.StringVar(&addr, "addr", "127.0.0.1:5001", "the address for this node")
 	flag.IntVar(&con, "c", 800, "the number of client used for test")
-	flag.IntVar(&tl, "tl", 0, "the timeout for started cohort node")
+	flag.IntVar(&tl, "tl", 20, "the timeout for started cohort node, -x for change, 0 for crash")
+	flag.IntVar(&down, "d", 1, "The heuristic method used: x for fixed timeout, 0 for RL.")
 
 	flag.BoolVar(&local, "local", false, "if the test is executed locally")
 	flag.BoolVar(&preload, "preload", false, "preload the data for tpc-c into shard")
@@ -45,6 +47,7 @@ func main() {
 	constants.SetConcurrency(con)
 	constants.SetR(r)
 	constants.SetServerTimeOut(tl)
+	constants.SetDown(down)
 	if local {
 		utils.SetLocal()
 	}

@@ -119,7 +119,7 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, Propose) {
 		return false
 	}
-	lev := ra.from.Lsm.Start(write.participants)
+	lev := ra.from.Lsm.Start(ra.participants)
 
 	if lev == rlsm.CFNF {
 		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev))
