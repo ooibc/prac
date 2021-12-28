@@ -14,7 +14,7 @@ type QT_Learner struct {
 	react int
 }
 
-var QT = []*QT_Learner{NewQT(), NewQT(), NewQT()}
+var QT = []*QT_Learner{NewQT(), NewQT(), NewQT(), NewQT()}
 
 func NewQT() *QT_Learner {
 	tes := QT_Learner{}
@@ -45,8 +45,8 @@ func (tes *QT_Learner) Trans(level int32, cid string) int {
 	return int(reply.GetAction())
 }
 
-func (tes *QT_Learner) Send(level int, cid string) {
-	if level != tes.level {
+func (tes *QT_Learner) Send(level int, cid string, failure bool) {
+	if level != tes.level || failure {
 		// reset
 		tes.Reset(int32(level), cid)
 		tes.level = level

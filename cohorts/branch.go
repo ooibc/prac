@@ -235,6 +235,7 @@ func (c *cohortBranch) breakableSleep4L2(TID int, N int, duration time.Duration)
 			return false
 		}
 		if tp%20 == 0 && c.from.checkCommit4L2(TID, N) { // add interval to help decrease contention
+			//			println(TID, c.from.stmt.cohortID, time.Now().Sub(st).String())
 			return true
 		}
 		tp++
@@ -254,10 +255,10 @@ func (c *cohortBranch) Propose(tx *remote.RACTransaction) *rlsm.KvRes {
 		c.from.broadCastVote(tx.TxnID, tx.ProtocolLevel, 0, tx.It, tx.Participants)
 		go utils.Assert(c.from.Abort(tx), "Impossible case, abort failed with all locks")
 	} else {
-		if tx.ProtocolLevel == rlsm.CFNoNF {
+		if tx.ProtocolLevel == rlsm.CFNoNF || constants.MinLevel > 1 {
 			utils.DPrintf("TXN" + strconv.Itoa(tx.TxnID) + ": " + "Yes Voting From " + c.from.stmt.cohortID)
 			c.from.broadCastVote(tx.TxnID, rlsm.CFNoNF, 1, tx.It, tx.Participants)
-			if !c.breakableSleep4L2(tx.TxnID, len(tx.Participants), c.from.stmt.timeoutForMsgs+c.from.stmt.timeoutForLocks) {
+			if len(tx.Participants) > 1 && !c.breakableSleep4L2(tx.TxnID, len(tx.Participants), c.from.stmt.timeoutForMsgs+c.from.stmt.timeoutForLocks) {
 				// Aborted
 				c.Res.SetSelfResult(false, false)
 				return c.Res
@@ -271,7 +272,7 @@ func (c *cohortBranch) Propose(tx *remote.RACTransaction) *rlsm.KvRes {
 				c.Res.SetSelfResult(true, false)
 			}
 		} else if tx.ProtocolLevel == rlsm.NoCFNoNF {
-			if !c.breakableSleep4L1(tx, c.from.stmt.timeoutForMsgs+constants.KvConcurrencyEps) {
+			if len(tx.Participants) > 1 && !c.breakableSleep4L1(tx, c.from.stmt.timeoutForMsgs+constants.KvConcurrencyEps) {
 				// Aborted
 				c.Res.SetSelfResult(false, false)
 				return c.Res

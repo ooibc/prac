@@ -41,11 +41,15 @@ var CONCURRENCY int = 10
 var KvConcurrencyEps time.Duration = 0
 var ConcurrencyEps time.Duration = 0
 var TPCC_Protocol string = "RAC"
-var ServerTimeOut = -1
+var ServerTimeOut = 20
 var BasicWaitTime time.Duration = 20
-var InitCnt int = 1
+var InitCnt int = 0
+var NFInterval int = -1
+var TestCF int32 = 0
+var TestNF int32 = 0
+var MinLevel = 0
 
-const DownBatchSize = 50
+const DownBatchSize = 2000
 const CONTENTION int = 90
 
 /*
@@ -86,6 +90,14 @@ func SetMsgDelay4RAC(r float64) {
 
 func SetDown(d int) {
 	InitCnt = d
+}
+
+func SetNF(d int) {
+	NFInterval = d
+}
+
+func SetMinLevel(l int) {
+	MinLevel = l
 }
 
 func Min(x, y int) int {

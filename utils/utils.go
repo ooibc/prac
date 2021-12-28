@@ -12,6 +12,7 @@ import (
 const Debug = false
 const ShowWarn = false
 const Test = false
+const Level = true
 
 var LocalTest = true
 
@@ -42,6 +43,13 @@ func TimeLoad(start time.Time, name string, TID int, latency *time.Duration) {
 	}
 	*latency = time.Since(start)
 	TPrintf("TXN" + strconv.Itoa(TID) + ": Time cost for " + name + " : " + (*latency).String())
+}
+
+func LPrintf(format string, a ...interface{}) {
+	if Level {
+		fmt.Printf(time.Now().Format("15:04:05.00")+" <---> "+format+"\n", a...)
+	}
+	return
 }
 
 func TPrintf(format string, a ...interface{}) {

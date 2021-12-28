@@ -115,7 +115,9 @@ func handleRequestType(stmt *CohortStmt, requestBytes []byte) {
 		sendBackCA(stmt, txn.TxnID, constants.INFO3PC, res)
 	} else if request.Mark == constants.RACVT {
 		// For RAC only.
-		stmt.Cohort.HandleVote(&request.Vt)
+		if !stmt.Cohort.IsNF() {
+			stmt.Cohort.HandleVote(&request.Vt)
+		}
 	}
 }
 

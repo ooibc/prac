@@ -119,10 +119,10 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, Propose) {
 		return false
 	}
-	lev := ra.from.Lsm.Start(ra.participants)
+	lev, ts := ra.from.Lsm.Start(ra.participants)
 
 	if lev == rlsm.CFNF {
-		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev))
+		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev, ts))
 		if !ra.from.CheckAndChange(ra.TxnID, Propose, PreRead) {
 			return false
 		}
@@ -130,10 +130,10 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	}
 	result := ra.RACPropose(write, lev)
 	if result == nil {
-		println("nil recived")
+		//		println("nil recived")
 		return false
 	}
-	err := ra.from.Lsm.Finish(ra.participants, result, lev)
+	err := ra.from.Lsm.Finish(ra.participants, result, lev, ts)
 	if !utils.Assert(err == nil, "The RLSM finish caught with error.") {
 		return false
 	}

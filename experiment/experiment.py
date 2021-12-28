@@ -9,12 +9,20 @@ run_server = "sudo docker exec -i cohort ./bin/rac-server -node=co -preload -add
 run_client_cmd  = "./bin/rac-server -node=ca -addr=127.0.0.1:5001"
 protocols = ["rac", "3pc", "2pc"]
 
-def get_client_cmd(bench, protocol, clients, r, file, env=20, alg=1):
+def get_server_cmd(addr, r, minlevel, env, nf):
+    cmd = run_server + str(addr) + \
+          " -r=" + str(r) + \
+          " -tl=" + str(env) + \
+          " -nf=" + str(nf) + \
+          "-ml=" + str(minlevel)
+    return cmd
+
+def get_client_cmd(bench, protocol, clients, r, file, env=20, alg=1, nf=-1):
     return run_client_cmd + " -bench=" + str(bench) + \
            " -p=" + str(protocol) + \
            " -c=" + str(clients) + \
-           " -tl=" + str(env) + \
            " -d=" + str(alg) + \
+           " -nf=" + str(nf) + \
            " -r=" + str(r) + file
 
 with open("./config.json") as f:
@@ -36,9 +44,9 @@ def run_task(cmd):
     return p
 
 
-def start_cohort(ext, service, r):
+def start_cohort(ext, service, r, minlevel=1, env=25, nf=-1):
     ip = ext.split(":")[0]
-    cmd = run_server + str(service) + " -r=" + str(r)
+    cmd = get_server_cmd(service, r, minlevel, env, nf)
     return execute_cmd_in_remote(ip, cmd)
 
 def start_service_on_all(r):
@@ -95,18 +103,26 @@ def run_per(bench, c, r = 3):
         if filename[1] == '.':
             filename = ">" + filename
 
-def run_heu(alg, env, bench = "tpc", c = 800, r = 3):
-    filename = ">./tmp/he/" + str(c) + "_" + str(alg) + "_" + str(env) + ".log"
-    for each in range(20):
+def run_heu(alg, env, bench = "tpc", c = 800, r = 3, nf = -1):
+    if env <= 0:
+        filename = ">./tmp/he/CF-" + str(-env)  + "-" + str(alg) + ".log"
+    else:
+        filename = ">./tmp/he/NF-" + str(nf)  + "-" + str(alg) + ".log"
+    for each in range(10):
         start_service_on_all(r)
         time.sleep(2)
-        p = run_task(get_client_cmd(bench, "rac", c, r, filename, env, alg))
+        p = run_task(get_client_cmd(bench, "rac", c, r, filename, env, alg, nf))
         p.wait()
         terminate_service()
         if filename[1] == '.':
             filename = ">" + filename
 
 if __name__ == '__main__':
-    for t in range(-5, 0):
-        for i in range(6):
-            run_heu(i, t)
+    run_heu(0, 33)
+    run_heu(1, 33)
+    for t in range(0, 40, 2):
+        for i in range(0, 20):
+            run_heu(i, 33, nf=t)
+    for t in range(0, 40, 2):
+        for i in range(0, 20):
+            run_heu(i, -t)

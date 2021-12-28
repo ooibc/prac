@@ -58,11 +58,6 @@ micro-local-test:
 test:
 	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -c=2000 -p=2pc
 
-tmp:
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=2000 -p=rac
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=3000 -p=rac
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=4000 -p=rac
-
 quick:
 	@go run ./rac-server/main.go
 
@@ -85,5 +80,13 @@ exp:
 	@make build
 	@python experiment/experiment.py
 
-tmp_t:
-	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -tl=-3 -d=1 -r=3>./tmp/he/800_1_-3.log
+down:
+	@python downserver/main.py
+
+tt:
+	@make build
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -r=2
+
+tmp:
+	@make build
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -tl=-20 -d=0 -r=2

@@ -194,13 +194,29 @@ func (stmt *TPCStmt) RunTPC() {
 		time.Sleep(2 * time.Millisecond)
 	}
 	utils.TPrintf("All clients Started")
-	time.Sleep(5 * time.Second)
+	if constants.ServerTimeOut < 0 {
+		time.Sleep(10*time.Second + 2*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
+	} else if constants.NFInterval > 0 {
+		time.Sleep(10*time.Second + 2*time.Duration(constants.NFInterval)*200*time.Millisecond)
+	} else {
+		time.Sleep(10 * time.Second)
+	}
 	atomic.StoreInt32(&stmt.txnCount, 0)
 	atomic.StoreInt32(&stmt.success, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
 	stmt.startTime = time.Now()
-	for i := 0; i < 10; i++ {
-		time.Sleep(time.Second)
+	if constants.ServerTimeOut < 0 {
+		for i := 0; i < 8*-constants.ServerTimeOut; i++ {
+			time.Sleep(200 * time.Millisecond)
+		}
+	} else if constants.NFInterval > 0 {
+		for i := 0; i < 8*constants.NFInterval; i++ {
+			time.Sleep(200 * time.Millisecond)
+		}
+	} else {
+		for i := 0; i < 10; i++ {
+			time.Sleep(time.Second)
+		}
 	}
 	stmt.logResults()
 }

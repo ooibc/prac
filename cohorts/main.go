@@ -105,31 +105,51 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 	utils.DPrintf("build finished for " + service)
 
 	ch <- true
-	if constants.ServerTimeOut > 0 {
-		go func() {
+	go func() {
+		if constants.ServerTimeOut > 0 {
+			// defined timeout.
 			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
-			stmt.Stop()
-		}()
-	} else {
-		go func() {
-			time.Sleep(time.Second * 20)
-			stmt.Stop()
-		}()
+		} else if constants.ServerTimeOut < 0 {
+			time.Sleep(10*time.Second + 12*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
+		} else if constants.NFInterval > 0 {
+			time.Sleep(10*time.Second + 12*time.Duration(constants.NFInterval)*200*time.Millisecond)
+		} else {
+			time.Sleep(22 * time.Second)
+		}
+		stmt.Stop()
+	}()
 
-		if constants.ServerTimeOut < 0 {
-			if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
-				go func() {
-					for {
-						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
-						stmt.Cohort.Break()
-						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
-						stmt.Cohort.Recover()
-					}
-				}()
-			}
-		} else if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
-			// Break at the first time.
+	if constants.ServerTimeOut <= 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+		if constants.ServerTimeOut == 0 {
 			stmt.Cohort.Break()
+		} else {
+			go func() {
+				for {
+					time.Sleep(time.Duration(-constants.ServerTimeOut) * 200 * time.Millisecond)
+					stmt.Cohort.Break()
+					//					println("CF bk")
+					time.Sleep(time.Duration(-constants.ServerTimeOut) * 200 * time.Millisecond)
+					stmt.Cohort.Recover()
+					//					println("CF rc")
+				}
+			}()
+		}
+	}
+
+	if constants.NFInterval >= 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+		if constants.NFInterval == 0 {
+			stmt.Cohort.NetBreak()
+		} else {
+			go func() {
+				for {
+					time.Sleep(time.Duration(constants.NFInterval) * 200 * time.Millisecond)
+					stmt.Cohort.NetBreak()
+					//				println("Nt bk")
+					time.Sleep(time.Duration(constants.NFInterval) * 200 * time.Millisecond)
+					stmt.Cohort.NetRecover()
+					//				println("Nt rc")
+				}
+			}()
 		}
 	}
 	// TODO: crash and recovery generator later added here

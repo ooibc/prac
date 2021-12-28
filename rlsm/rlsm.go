@@ -3,7 +3,7 @@ package rlsm
 import (
 	"github.com/allvphx/RAC/constants"
 	"github.com/allvphx/RAC/lock"
-	"sync"
+	"github.com/allvphx/RAC/utils"
 )
 
 type Level int
@@ -17,34 +17,33 @@ const (
 // LevelStateMachine is the thread safe level machine maintained on the DBMS, each shard is assigned with one.
 type LevelStateMachine struct {
 	id        int
-	mu        *sync.Mutex
 	he_mu     *lock.RWLocker // mutex for heurstic method, to access the model sequentially.
 	level     Level          // the current level of shards robustness
 	H         int
 	downClock int
+	from      *LevelStateManager
 }
 
-func NewLSM() *LevelStateMachine {
+func NewLSM(s *LevelStateManager) *LevelStateMachine {
 	return &LevelStateMachine{
-		mu:        &sync.Mutex{},
 		he_mu:     lock.NewRWLocker(),
 		level:     NoCFNoNF,
 		H:         0,
 		downClock: 0,
+		from:      s,
 	}
 }
 
-//GetLevel thread safe method
 func (c *LevelStateMachine) GetLevel() Level {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	return c.level
+}
+
+func (c *LevelStateMachine) Down() {
+	c.level = NoCFNoNF
 }
 
 //Next thread safely upward transform the state machine with the results handled.
 func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level, id string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// Upper transformations: comLevel only used for up.
 	if c.level < comLevel && comLevel == CFNF {
@@ -57,15 +56,15 @@ func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level, id stri
 		if c.level == NoCFNoNF {
 			if NetF {
 				c.level = CFNF
-				//			fmt.Println("upppppp!!!!! to NF", id)
+				utils.LPrintf("upppppp!!!!! to NF" + id)
 			} else if CrashF {
 				c.level = CFNoNF
-				//			fmt.Println("upppppp!!!!!", id)
+				utils.LPrintf("upppppp!!!!!" + id)
 			}
 		} else if c.level == CFNoNF {
 			if NetF {
 				c.level = CFNF
-				//			fmt.Println("upppppp!!!!! to NF", id)
+				utils.LPrintf("upppppp!!!!! to NF" + id)
 			}
 		}
 	}

@@ -7,22 +7,26 @@ type Learner interface {
 	Action(cid string) int
 }
 
-func Send(level int, cid string) {
+func Send(level int, cid string, failure bool) {
+	i := int(cid[len(cid)-1] - '1')
+	if level == 3 {
+		i = 3
+	}
 	if constants.InitCnt > 0 {
-		i := int(cid[len(cid)-1] - '1')
-		Fixed[i].Send(level, cid)
+		Fixed[i].Send(level, cid, failure)
 	} else {
-		i := int(cid[len(cid)-1] - '1')
-		QT[i].Send(level, cid)
+		QT[i].Send(level, cid, failure)
 	}
 }
 
-func Action(cid string) int {
+func Action(level int, cid string) int {
+	i := int(cid[len(cid)-1] - '1')
+	if level == 3 {
+		i = 3
+	}
 	if constants.InitCnt > 0 {
-		i := int(cid[len(cid)-1] - '1')
 		return Fixed[i].Action(cid)
 	} else {
-		i := int(cid[len(cid)-1] - '1')
 		return QT[i].Action(cid)
 	}
 }
