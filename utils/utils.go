@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/allvphx/RAC/constants"
 	"os"
 	"strconv"
 	"time"
@@ -12,12 +13,15 @@ import (
 const Debug = false
 const ShowWarn = false
 const Test = false
-const Level = true
+const Level = false
 
-var LocalTest = true
+var OU_addrs = []string{"10.148.0.3:2001", "10.148.0.4:2001", "10.148.0.5:2001"}
+var LocalTest = false
 
 func SetLocal() {
 	LocalTest = true
+	constants.ConfigLocation = "./configs/local.json"
+	OU_addrs = []string{"127.0.0.1:6001", "127.0.0.1:6002", "127.0.0.1:6003"}
 }
 
 func DPrintf(format string, a ...interface{}) {

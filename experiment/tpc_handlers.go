@@ -1,7 +1,6 @@
 package experiment
 
 import (
-	"github.com/allvphx/RAC/cohorts"
 	"github.com/allvphx/RAC/collaborator"
 	"github.com/allvphx/RAC/mockkv"
 	"github.com/allvphx/RAC/utils"
@@ -26,7 +25,7 @@ func (c *TPCStmt) Init(pro string) {
 	if utils.LocalTest {
 		c.ca, c.co = collaborator.CollaboratorTPCTestKit()
 	} else {
-		c.ca = collaborator.RemoteTestkit()
+		c.ca = collaborator.RemoteTestkit("10.184.0.2:2001")
 		c.co = nil
 	}
 	c.protocol = pro
@@ -56,7 +55,7 @@ func random(min, max int) int {
 func (c *TPCStmt) checkAndLoadStock(client *TPCClient, order *TPCOrder, res map[string]int) bool {
 	for _, v := range order.Items {
 		key := utils.TransTableItem("stock", v.Stock, v.Item)
-		if res[utils.Hash(cohorts.OU_addrs[v.Stock], key)] < 10 {
+		if res[utils.Hash(utils.OU_addrs[v.Stock], key)] < 10 {
 			if len(client.needStock.ToSlice()) < NeedStockSize {
 				client.needStock.Add(v.Item*NWareHouse + v.Stock)
 			}
@@ -64,7 +63,7 @@ func (c *TPCStmt) checkAndLoadStock(client *TPCClient, order *TPCOrder, res map[
 	}
 	for _, v := range order.Items {
 		key := utils.TransTableItem("stock", v.Stock, v.Item)
-		if res[utils.Hash(cohorts.OU_addrs[v.Stock], key)] < 5 {
+		if res[utils.Hash(utils.OU_addrs[v.Stock], key)] < 5 {
 			// TPCC Standard: no such false considered.
 			return true
 		}
@@ -79,7 +78,7 @@ func (c *TPCStmt) payment(client *TPCClient, order *TPCOrder, parts []string) bo
 		key := utils.TransTableItem("order", -1, order.Order)
 		paWrite.AddUpdate(v, key, Payed)
 	}
-	ok := c.ca.Manager.SubmitTxn(paWrite, c.protocol, nil)
+	ok := c.ca.Manager.SubmitTxn(paWrite, c.protocol, nil, nil)
 	for _, v := range order.Items {
 		// TPCC standard: only one order payed, quick response.
 		if len(client.payed.ToSlice()) < PayedSize {
@@ -89,12 +88,12 @@ func (c *TPCStmt) payment(client *TPCClient, order *TPCOrder, parts []string) bo
 	return ok
 }
 
-func (c *TPCStmt) newOrder(client *TPCClient, order *TPCOrder, parts []string, latency *time.Duration) bool {
+func (c *TPCStmt) newOrder(client *TPCClient, order *TPCOrder, parts []string, latency *time.Duration, levels *int64) bool {
 	noTID := collaborator.GetTxnID()
 	defer utils.TimeTrack(time.Now(), "For New order", noTID)
 	noRead := collaborator.NewDBTransaction(noTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
-		noRead.AddRead(cohorts.OU_addrs[v.Stock], utils.TransTableItem("stock", v.Stock, v.Item))
+		noRead.AddRead(utils.OU_addrs[v.Stock], utils.TransTableItem("stock", v.Stock, v.Item))
 	}
 	//	val, ok := make(map[string]int), true
 	val, ok := c.ca.Manager.PreRead(noRead)
@@ -105,13 +104,13 @@ func (c *TPCStmt) newOrder(client *TPCClient, order *TPCOrder, parts []string, l
 	noWrite := collaborator.NewDBTransaction(noTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
 		key := utils.TransTableItem("stock", v.Stock, v.Item)
-		noWrite.AddUpdate(cohorts.OU_addrs[v.Stock], key, val[utils.Hash(cohorts.OU_addrs[v.Stock], key)]-5)
+		noWrite.AddUpdate(utils.OU_addrs[v.Stock], key, val[utils.Hash(utils.OU_addrs[v.Stock], key)]-5)
 	}
 	for _, v := range parts {
 		key := utils.TransTableItem("order", -1, order.Order)
 		noWrite.AddUpdate(v, key, Newed)
 	}
-	ok = c.ca.Manager.SubmitTxn(noWrite, c.protocol, latency)
+	ok = c.ca.Manager.SubmitTxn(noWrite, c.protocol, latency, levels)
 	if !ok {
 		utils.TPrintf("TXN" + strconv.Itoa(noTID) + ": " + "Failed for commit")
 	}
@@ -123,7 +122,7 @@ func (c *TPCStmt) newOrder(client *TPCClient, order *TPCOrder, parts []string, l
 }
 
 // HandleOrder handle an Order from tpcc-generator
-func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *int64, txnCount, success *int32) bool {
+func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *int64, levelSum *int64, txnCount, success *int32) bool {
 	exist := make(map[int]bool)
 	parts := make([]string, 0)
 	rand.Seed(time.Now().Unix())
@@ -137,19 +136,22 @@ func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *in
 		}
 		if !exist[v.Stock] {
 			exist[v.Stock] = true
-			parts = append(parts, cohorts.OU_addrs[v.Stock])
+			parts = append(parts, utils.OU_addrs[v.Stock])
 		}
 	}
 	/// NewOrderTxn
 	latency := time.Duration(0)
-	if c.newOrder(client, order, parts, &latency) {
+	levelS := int64(0)
+	if c.newOrder(client, order, parts, &latency, &levelS) {
 		utils.TPrintf("NewOrder Success")
 		atomic.AddInt64(latencySum, int64(latency))
+		atomic.AddInt64(levelSum, levelS)
 		atomic.AddInt32(txnCount, 1)
 		atomic.AddInt32(success, 1)
 	} else {
 		utils.TPrintf("NewOrder Failed")
 		atomic.AddInt64(latencySum, int64(latency))
+		atomic.AddInt64(levelSum, levelS)
 		atomic.AddInt32(txnCount, 1)
 		return false
 	}
@@ -163,7 +165,7 @@ func (c *TPCStmt) stockLevel(order *TPCOrder, parts []string) bool {
 	slTID := collaborator.GetTxnID()
 	slRead := collaborator.NewDBTransaction(slTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
-		slRead.AddRead(cohorts.OU_addrs[v.Stock], utils.TransTableItem("stock", v.Stock, v.Item))
+		slRead.AddRead(utils.OU_addrs[v.Stock], utils.TransTableItem("stock", v.Stock, v.Item))
 	}
 	val, ok := c.ca.Manager.PreRead(slRead)
 	if !ok {
@@ -173,9 +175,9 @@ func (c *TPCStmt) stockLevel(order *TPCOrder, parts []string) bool {
 	slWrite := collaborator.NewDBTransaction(slTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
 		key := utils.TransTableItem("stock", v.Stock, v.Item)
-		slWrite.AddUpdate(cohorts.OU_addrs[v.Stock], key, val[utils.Hash(cohorts.OU_addrs[v.Stock], key)]+100)
+		slWrite.AddUpdate(utils.OU_addrs[v.Stock], key, val[utils.Hash(utils.OU_addrs[v.Stock], key)]+100)
 	}
-	ok = c.ca.Manager.SubmitTxn(slWrite, c.protocol, nil)
+	ok = c.ca.Manager.SubmitTxn(slWrite, c.protocol, nil, nil)
 	return ok
 }
 
@@ -189,7 +191,7 @@ func (c *TPCStmt) HandleStockLevel(client *TPCClient) {
 		item := v.(int) / NWareHouse
 		if !exist[ware] {
 			exist[ware] = true
-			parts = append(parts, cohorts.OU_addrs[ware])
+			parts = append(parts, utils.OU_addrs[ware])
 		}
 		tmp.Items = append(tmp.Items, &TPCOrderLine{
 			Stock: ware,
@@ -204,9 +206,9 @@ func (c *TPCStmt) delivery(order *TPCOrder, parts []string) bool {
 	deWrite := collaborator.NewDBTransaction(deTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
 		key := utils.TransTableItem("order", v.Stock, v.Item)
-		deWrite.AddUpdate(cohorts.OU_addrs[v.Stock], key, Delivered)
+		deWrite.AddUpdate(utils.OU_addrs[v.Stock], key, Delivered)
 	}
-	ok := c.ca.Manager.SubmitTxn(deWrite, c.protocol, nil)
+	ok := c.ca.Manager.SubmitTxn(deWrite, c.protocol, nil, nil)
 	return ok
 }
 
@@ -226,7 +228,7 @@ func (c *TPCStmt) HandleDelivery(client *TPCClient) {
 		order := v.(int) / NWareHouse
 		if !exist[ware] {
 			exist[ware] = true
-			parts = append(parts, cohorts.OU_addrs[ware])
+			parts = append(parts, utils.OU_addrs[ware])
 		}
 		tmp.Items = append(tmp.Items, &TPCOrderLine{
 			Stock: ware,
@@ -241,11 +243,11 @@ func (c *TPCStmt) orderStatus(order *TPCOrder, parts []string) bool {
 	osRead := collaborator.NewDBTransaction(osTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
 	for _, v := range order.Items {
 		key := utils.TransTableItem("order", v.Stock, v.Item)
-		osRead.AddRead(cohorts.OU_addrs[v.Stock], key)
+		osRead.AddRead(utils.OU_addrs[v.Stock], key)
 	}
 	_, ok := c.ca.Manager.PreRead(osRead)
 	osWrite := collaborator.NewDBTransaction(osTID, mockkv.DefaultTimeOut, parts, c.ca.Manager)
-	ok = ok && c.ca.Manager.SubmitTxn(osWrite, c.protocol, nil)
+	ok = ok && c.ca.Manager.SubmitTxn(osWrite, c.protocol, nil, nil)
 	return ok
 }
 
@@ -259,7 +261,7 @@ func (c *TPCStmt) HandleOrderStatus(client *TPCClient) {
 	ware := v.(int) % NWareHouse
 	order := v.(int) / NWareHouse
 	if !exist[ware] {
-		parts = append(parts, cohorts.OU_addrs[ware])
+		parts = append(parts, utils.OU_addrs[ware])
 		exist[ware] = true
 	}
 	tmp.Items = append(tmp.Items, &TPCOrderLine{

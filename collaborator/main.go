@@ -3,6 +3,7 @@ package collaborator
 import (
 	"encoding/json"
 	"github.com/allvphx/RAC/constants"
+	ds "github.com/allvphx/RAC/downserver"
 	"github.com/allvphx/RAC/utils"
 	"io/ioutil"
 	"net"
@@ -37,9 +38,9 @@ func loadConfig(stmt *CollaboratorStmt, config *map[string]interface{}) {
 	con_Lock.Lock()
 	defer con_Lock.Unlock()
 	/* Read the config file and store it in 'config' variable */
-	raw, err := ioutil.ReadFile("./config.json")
+	raw, err := ioutil.ReadFile(constants.ConfigLocation)
 	if err != nil {
-		raw, err = ioutil.ReadFile("../config.json")
+		raw, err = ioutil.ReadFile("." + constants.ConfigLocation)
 	}
 	utils.CheckError(err)
 
@@ -60,6 +61,7 @@ func loadConfig(stmt *CollaboratorStmt, config *map[string]interface{}) {
 }
 
 func (c *CollaboratorStmt) Stop() {
+	ds.Stop()
 	c.done <- true
 	utils.CheckError(c.listener.Close())
 }

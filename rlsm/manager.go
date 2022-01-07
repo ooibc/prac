@@ -12,6 +12,10 @@ type LevelStateManager struct {
 	states map[string]*LevelStateMachine
 }
 
+func Stop() {
+
+}
+
 func NewLSMManger(parts []string) *LevelStateManager {
 	res := &LevelStateManager{
 		mu:     sync.Mutex{},

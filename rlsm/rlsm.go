@@ -44,13 +44,6 @@ func (c *LevelStateMachine) Down() {
 
 //Next thread safely upward transform the state machine with the results handled.
 func (c *LevelStateMachine) Next(CrashF bool, NetF bool, comLevel Level, id string) error {
-
-	// Upper transformations: comLevel only used for up.
-	if c.level < comLevel && comLevel == CFNF {
-		// NF cannot be located to one single node.
-		c.level = comLevel
-	}
-
 	if c.level <= comLevel {
 		// the level has been updated by another client, current result is no longer valid.
 		if c.level == NoCFNoNF {

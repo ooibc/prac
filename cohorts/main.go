@@ -55,9 +55,9 @@ func loadConfig(stmt *CohortStmt, config *map[string]interface{}) {
 	con_Lock.Lock()
 	defer con_Lock.Unlock()
 	/* Read the config file and store it in 'config' variable */
-	raw, err := ioutil.ReadFile("./config.json")
+	raw, err := ioutil.ReadFile(constants.ConfigLocation)
 	if err != nil {
-		raw, err = ioutil.ReadFile("../config.json")
+		raw, err = ioutil.ReadFile("." + constants.ConfigLocation)
 	}
 	utils.CheckError(err)
 
@@ -106,15 +106,15 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 
 	ch <- true
 	go func() {
-		if constants.ServerTimeOut > 0 {
+		if constants.ServerTimeOut < 0 {
+			time.Sleep(3*time.Second + constants.WarmUpTime + 12*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
+		} else if constants.NFInterval > 0 {
+			time.Sleep(3*time.Second + constants.WarmUpTime + 12*time.Duration(constants.NFInterval)*200*time.Millisecond)
+		} else if constants.ServerTimeOut > 0 {
 			// defined timeout.
 			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
-		} else if constants.ServerTimeOut < 0 {
-			time.Sleep(10*time.Second + 12*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
-		} else if constants.NFInterval > 0 {
-			time.Sleep(10*time.Second + 12*time.Duration(constants.NFInterval)*200*time.Millisecond)
 		} else {
-			time.Sleep(22 * time.Second)
+			time.Sleep(22*time.Second + constants.WarmUpTime)
 		}
 		stmt.Stop()
 	}()

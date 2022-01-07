@@ -5,9 +5,7 @@ import (
 	"time"
 )
 
-var caID = "127.0.0.1:5001"
-
-func RemoteTestkit() *CollaboratorStmt {
+func RemoteTestkit(caID string) *CollaboratorStmt {
 	stmt := &CollaboratorStmt{}
 	var Arg = []string{"*", "*", caID}
 	ch := make(chan bool)
@@ -18,6 +16,7 @@ func RemoteTestkit() *CollaboratorStmt {
 
 func CollaboratorBatchTestKit() (*CollaboratorStmt, []*cohorts.CohortStmt) {
 	stmt := &CollaboratorStmt{}
+	caID := "127.0.0.1:5001"
 	var Arg = []string{"*", "*", caID}
 	ch := make(chan bool)
 	go begin(stmt, Arg, ch)
@@ -28,6 +27,7 @@ func CollaboratorBatchTestKit() (*CollaboratorStmt, []*cohorts.CohortStmt) {
 
 func CollaboratorTPCTestKit() (*CollaboratorStmt, []*cohorts.CohortStmt) {
 	stmt := &CollaboratorStmt{}
+	caID := "127.0.0.1:5001"
 	var Arg = []string{"*", "*", caID}
 	ch := make(chan bool)
 	go begin(stmt, Arg, ch)

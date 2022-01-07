@@ -181,13 +181,13 @@ func (c *RACManager) CheckAndChange(TID int, begin int32, end int32) bool {
 	return true
 }
 
-func (c *RACManager) SubmitTxn(txn *DBTransaction, protocol string, latency *time.Duration) bool {
+func (c *RACManager) SubmitTxn(txn *DBTransaction, protocol string, latency *time.Duration, levels *int64) bool {
 	c.SkipRead(txn.TxnID)
 	defer utils.TimeLoad(time.Now(), "Submit transaction", txn.TxnID, latency)
 	txn.Optimize()
 	switch protocol {
 	case RobAdapC:
-		return txn.RACSubmit(nil, txn)
+		return txn.RACSubmit(nil, txn, levels)
 	case TwoPC:
 		return txn.TwoPCSubmit(nil, txn)
 	case ThreePC:

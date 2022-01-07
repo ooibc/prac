@@ -6,8 +6,8 @@ from learn import Learner
 
 # Q-Table q-learn agent.
 class QT_Learner(Learner):
-    def __init__(self, action_n, state_count, lr = 0.04, ga = 0.98):
-        self.q = np.zeros((state_count, action_n))
+    def __init__(self, action_n, state_count, lr = 0.02, ga = 0.98):
+        self.q = np.zeros((state_count, action_n), dtype=np.float64)
         self.action_space = action_n
         self.lr = lr
         self.ga = ga
@@ -33,6 +33,7 @@ class QT_Learner(Learner):
         return a
 
     def update_transition(self, s, a, r, s_t, done):
+        print("trained")
         q = (1 - self.lr) * self.get(s, a) + self.lr * (r + self.ga * self.max_q(s_t)[1] * done)
         self.put(s, a, q)
 
@@ -44,7 +45,7 @@ class QT_Learner(Learner):
         return s_, r, done
 
 # action 2: 0 for stop, 1 for next.
-# space: 0 ~ 9 for 1~7 intervals, 9 for final.
+# space: 0 ~ 8 for , 8 for final.
 def init():
-    model = QT_Learner(2, 10)
+    model = QT_Learner(2, 9)
     return model

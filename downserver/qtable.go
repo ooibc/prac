@@ -3,6 +3,7 @@ package downserver
 import (
 	"context"
 	rl "github.com/allvphx/RAC/downserver/.rlaction"
+	"github.com/allvphx/RAC/utils"
 	"google.golang.org/grpc"
 	"log"
 	"time"
@@ -10,35 +11,40 @@ import (
 
 type QT_Learner struct {
 	level int
-	conn  *grpc.ClientConn
 	react int
 }
 
 var QT = []*QT_Learner{NewQT(), NewQT(), NewQT(), NewQT()}
 
+func Stop() {
+}
+
 func NewQT() *QT_Learner {
 	tes := QT_Learner{}
 	tes.level = 1
-	var err error = nil
 	tes.react = -1
-	tes.conn, err = grpc.Dial("localhost:5003", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal(err)
-	}
 	return &tes
 }
 
 func (tes *QT_Learner) Reset(level int32, cid string) {
-	client := rl.NewResetClient(tes.conn)
-	_, err := client.Reset(context.Background(), &rl.Info{Cid: &cid, Level: &level})
+	conn, err := grpc.Dial("localhost:5003", grpc.WithInsecure())
+	defer conn.Close()
+	utils.CheckError(err)
+	reset := rl.NewResetClient(conn)
+	re := GetReward()
+	_, err = reset.Reset(context.Background(), &rl.Info{Cid: &cid, Level: &level, Reward: &re})
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (tes *QT_Learner) Trans(level int32, cid string) int {
-	client := rl.NewActionClient(tes.conn)
-	reply, err := client.Action(context.Background(), &rl.Info{Cid: &cid, Level: &level})
+	conn, err := grpc.Dial("localhost:5003", grpc.WithInsecure())
+	defer conn.Close()
+	utils.CheckError(err)
+	act := rl.NewActionClient(conn)
+	re := GetReward()
+	reply, err := act.Action(context.Background(), &rl.Info{Cid: &cid, Level: &level, Reward: &re})
 	if err != nil {
 		log.Fatal(err)
 	}

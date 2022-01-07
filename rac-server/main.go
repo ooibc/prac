@@ -36,7 +36,7 @@ func init() {
 	// For collaborator
 	flag.StringVar(&bench, "bench", "tpc", "the benchmark used for the test")
 	flag.StringVar(&protocol, "p", "rac", "the protocol used for this test")
-	flag.IntVar(&con, "c", 800, "the number of client used for test")
+	flag.IntVar(&con, "c", 1000, "the number of client used for test")
 	flag.IntVar(&down, "d", 1, "The heuristic method used: x for fixed timeout, 0 for RL.")
 	flag.BoolVar(&local, "local", false, "if the test is executed locally")
 

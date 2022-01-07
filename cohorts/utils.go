@@ -11,21 +11,19 @@ import (
 	"time"
 )
 
-var OU_addrs = []string{"127.0.0.1:6001", "127.0.0.1:6002", "127.0.0.1:6003"}
-
 func comStart() []*CohortStmt {
 	stmts := make([]*CohortStmt, 3)
 	ch := make(chan bool)
 	stmts[0] = &CohortStmt{}
-	go begin(stmts[0], ch, OU_addrs[0])
+	go begin(stmts[0], ch, utils.OU_addrs[0])
 	<-ch
 
 	stmts[1] = &CohortStmt{}
-	go begin(stmts[1], ch, OU_addrs[1])
+	go begin(stmts[1], ch, utils.OU_addrs[1])
 	<-ch
 
 	stmts[2] = &CohortStmt{}
-	go begin(stmts[2], ch, OU_addrs[2])
+	go begin(stmts[2], ch, utils.OU_addrs[2])
 	<-ch
 	return stmts
 }
@@ -88,7 +86,7 @@ func (c *CohortStmt) LoadStock() {
 		count, err := strconv.Atoi(row[2])
 		utils.CheckError(err)
 		ware--
-		if OU_addrs[ware] == c.cohortID {
+		if utils.OU_addrs[ware] == c.cohortID {
 			cnt++
 			c.Cohort.Kv.Update(utils.TransTableItem("stock", ware, item), count)
 		}

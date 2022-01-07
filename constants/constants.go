@@ -48,9 +48,11 @@ var NFInterval int = -1
 var TestCF int32 = 0
 var TestNF int32 = 0
 var MinLevel = 0
+var ConfigLocation = "./configs/remote.json"
 
-const DownBatchSize = 2000
+const DownBatchSize = 200
 const CONTENTION int = 90
+const WarmUpTime time.Duration = 2 * time.Second
 
 /*
 * 	ThreePC     = "3PC"
