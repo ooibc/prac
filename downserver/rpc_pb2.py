@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=b'Z\t.rlaction',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\trpc.proto\"\"\n\x04Info\x12\x0b\n\x03\x63id\x18\x01 \x02(\t\x12\r\n\x05level\x18\x02 \x02(\x05\"\x15\n\x03\x41\x63t\x12\x0e\n\x06\x61\x63tion\x18\x01 \x02(\x05\x32\x1f\n\x06\x41\x63tion\x12\x15\n\x06\x61\x63tion\x12\x05.Info\x1a\x04.Act2\x1d\n\x05Reset\x12\x14\n\x05reset\x12\x05.Info\x1a\x04.ActB\x0bZ\t.rlaction'
+  serialized_pb=b'\n\trpc.proto\"2\n\x04Info\x12\x0b\n\x03\x63id\x18\x01 \x02(\t\x12\r\n\x05level\x18\x02 \x02(\x05\x12\x0e\n\x06reward\x18\x03 \x02(\x02\"\x15\n\x03\x41\x63t\x12\x0e\n\x06\x61\x63tion\x18\x01 \x02(\x05\x32\x1f\n\x06\x41\x63tion\x12\x15\n\x06\x61\x63tion\x12\x05.Info\x1a\x04.Act2\x1d\n\x05Reset\x12\x14\n\x05reset\x12\x05.Info\x1a\x04.ActB\x0bZ\t.rlaction'
 )
 
 
@@ -47,6 +47,13 @@ _INFO = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='reward', full_name='Info.reward', index=2,
+      number=3, type=2, cpp_type=6, label=2,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -60,7 +67,7 @@ _INFO = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=13,
-  serialized_end=47,
+  serialized_end=63,
 )
 
 
@@ -91,8 +98,8 @@ _ACT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=49,
-  serialized_end=70,
+  serialized_start=65,
+  serialized_end=86,
 )
 
 DESCRIPTOR.message_types_by_name['Info'] = _INFO
@@ -123,8 +130,8 @@ _ACTION = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=72,
-  serialized_end=103,
+  serialized_start=88,
+  serialized_end=119,
   methods=[
   _descriptor.MethodDescriptor(
     name='action',
@@ -149,8 +156,8 @@ _RESET = _descriptor.ServiceDescriptor(
   index=1,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=105,
-  serialized_end=134,
+  serialized_start=121,
+  serialized_end=150,
   methods=[
   _descriptor.MethodDescriptor(
     name='reset',

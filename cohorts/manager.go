@@ -22,19 +22,36 @@ type CohortManager struct {
 	L2VoteReceived [][]bool
 	connections    []*net.Conn
 	Broken         int32
+	NF             int32
 }
 
 // Break Recover IsBroken For test
 func (c *CohortManager) Break() {
 	atomic.StoreInt32(&c.Broken, 1)
+	atomic.StoreInt32(&constants.TestCF, 1)
+}
+
+func (c *CohortManager) NetBreak() {
+	atomic.StoreInt32(&c.NF, 1)
+	atomic.StoreInt32(&constants.TestNF, 1)
 }
 
 func (c *CohortManager) Recover() {
 	atomic.StoreInt32(&c.Broken, 0)
+	atomic.StoreInt32(&constants.TestCF, 0)
+}
+
+func (c *CohortManager) NetRecover() {
+	atomic.StoreInt32(&c.NF, 0)
+	atomic.StoreInt32(&constants.TestNF, 0)
 }
 
 func (c *CohortManager) IsBroken() bool {
 	return atomic.LoadInt32(&c.Broken) == 1
+}
+
+func (c *CohortManager) IsNF() bool {
+	return atomic.LoadInt32(&c.NF) == 1
 }
 
 const MaxTxnID = constants.Max_Txn_ID
@@ -49,6 +66,7 @@ func NewCohortManager(stmt *CohortStmt, storageSize int) *CohortManager {
 		connections:    make([]*net.Conn, 0),
 		stmt:           stmt,
 		Broken:         0,
+		NF:             0,
 	}
 	for i := 0; i < MaxTxnID; i++ {
 		res.PoolLocks[i] = &sync.Mutex{}

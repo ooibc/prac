@@ -9,29 +9,30 @@
 # sudo apt-get update
   #
   # sudo apt-get install docker-ce docker-ce-cli containerd.io
-# sudo docker pull lawyerphx/rac
-# sudo docker run -dt --name="cohort" --network host lawyerphx/rac
-# sudo docker run -dt --name="collaborator" --network host lawyerphx/rac
+# sudo docker pull lawyerphx/rac:v2
+# sudo docker run -dt --name="cohort" --network host lawyerphx/rac:v2
+# sudo docker run -it --name="collaborator" --network host lawyerphx/rac:v2
 # sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr=10.170.0.2:2001
+# sudo docker exec -i collaborator make exp
 
 all: build local ycsb tpc
 
 server:
-	@ssh allvphx@34.126.191.25
+	@ssh allvphx@34.101.120.206
 c0:
-	@ssh allvphx@34.150.4.136
+	@ssh allvphx@34.124.163.241
 c1:
-	@ssh allvphx@35.194.216.169
+	@ssh allvphx@34.126.191.25
 c2:
-	@ssh allvphx@35.221.174.69
+	@ssh allvphx@34.124.178.254
 
 clean:
 	@docker rm $(docker ps -aq)
 	@docker rmi $(docker images -aq)
 
 pack:
-	@docker build -t rac:latest -f ./Dockerfile .
-	@docker export -o rac.tar rac:latest
+	@docker build -t lawyerphx/rac:v2 -f ./Dockerfile .
+	@docker export -o rac.tar lawyerphx/rac:v2
 
 build:
 	@go build -o ./bin/rac-server ./rac-server/main.go
@@ -58,11 +59,6 @@ micro-local-test:
 test:
 	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -c=2000 -p=2pc
 
-tmp:
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=2000 -p=rac
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=3000 -p=rac
-	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -local -c=4000 -p=rac
-
 quick:
 	@go run ./rac-server/main.go
 
@@ -85,5 +81,13 @@ exp:
 	@make build
 	@python experiment/experiment.py
 
-tmp_t:
-	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -tl=-3 -d=1 -r=3>./tmp/he/800_1_-3.log
+down:
+	@python3 downserver/main.py 68
+
+tt:
+	@make build
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -r=2
+
+tmp:
+	@make build
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -nf=1 -tl=33 -d=0 -r=3

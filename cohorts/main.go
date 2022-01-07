@@ -55,9 +55,9 @@ func loadConfig(stmt *CohortStmt, config *map[string]interface{}) {
 	con_Lock.Lock()
 	defer con_Lock.Unlock()
 	/* Read the config file and store it in 'config' variable */
-	raw, err := ioutil.ReadFile("./config.json")
+	raw, err := ioutil.ReadFile(constants.ConfigLocation)
 	if err != nil {
-		raw, err = ioutil.ReadFile("../config.json")
+		raw, err = ioutil.ReadFile("." + constants.ConfigLocation)
 	}
 	utils.CheckError(err)
 
@@ -105,31 +105,51 @@ func begin(stmt *CohortStmt, ch chan bool, service string) {
 	utils.DPrintf("build finished for " + service)
 
 	ch <- true
-	if constants.ServerTimeOut > 0 {
-		go func() {
-			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
-			stmt.Stop()
-		}()
-	} else {
-		go func() {
-			time.Sleep(time.Second * 20)
-			stmt.Stop()
-		}()
-
+	go func() {
 		if constants.ServerTimeOut < 0 {
-			if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
-				go func() {
-					for {
-						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
-						stmt.Cohort.Break()
-						time.Sleep(time.Duration(-constants.ServerTimeOut) * time.Millisecond * 500)
-						stmt.Cohort.Recover()
-					}
-				}()
-			}
-		} else if stmt.cohortID[len(stmt.cohortID)-1] == '1' {
-			// Break at the first time.
+			time.Sleep(3*time.Second + constants.WarmUpTime + 12*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
+		} else if constants.NFInterval > 0 {
+			time.Sleep(3*time.Second + constants.WarmUpTime + 12*time.Duration(constants.NFInterval)*200*time.Millisecond)
+		} else if constants.ServerTimeOut > 0 {
+			// defined timeout.
+			time.Sleep(time.Second * time.Duration(constants.ServerTimeOut))
+		} else {
+			time.Sleep(22*time.Second + constants.WarmUpTime)
+		}
+		stmt.Stop()
+	}()
+
+	if constants.ServerTimeOut <= 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+		if constants.ServerTimeOut == 0 {
 			stmt.Cohort.Break()
+		} else {
+			go func() {
+				for {
+					time.Sleep(time.Duration(-constants.ServerTimeOut) * 200 * time.Millisecond)
+					stmt.Cohort.Break()
+					//					println("CF bk")
+					time.Sleep(time.Duration(-constants.ServerTimeOut) * 200 * time.Millisecond)
+					stmt.Cohort.Recover()
+					//					println("CF rc")
+				}
+			}()
+		}
+	}
+
+	if constants.NFInterval >= 0 && stmt.cohortID[len(stmt.cohortID)-1] == '1' {
+		if constants.NFInterval == 0 {
+			stmt.Cohort.NetBreak()
+		} else {
+			go func() {
+				for {
+					time.Sleep(time.Duration(constants.NFInterval) * 200 * time.Millisecond)
+					stmt.Cohort.NetBreak()
+					//				println("Nt bk")
+					time.Sleep(time.Duration(constants.NFInterval) * 200 * time.Millisecond)
+					stmt.Cohort.NetRecover()
+					//				println("Nt rc")
+				}
+			}()
 		}
 	}
 	// TODO: crash and recovery generator later added here

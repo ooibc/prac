@@ -12,6 +12,6 @@ func TestTPCCLocal(t *testing.T) {
 
 func TestTPCCRemote(t *testing.T) {
 	st := TPCStmt{}
-	ca := collaborator.RemoteTestkit()
+	ca := collaborator.RemoteTestkit("10.184.0.2:2001")
 	st.TPCC_Test(ca)
 }

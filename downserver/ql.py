@@ -2,12 +2,12 @@ import random
 import math
 import numpy as np
 
-from downserver.learn import Learner
+from learn import Learner
 
 # Q-Table q-learn agent.
 class QT_Learner(Learner):
     def __init__(self, action_n, state_count, lr = 0.02, ga = 0.98):
-        self.q = np.zeros((state_count, action_n))
+        self.q = np.zeros((state_count, action_n), dtype=np.float64)
         self.action_space = action_n
         self.lr = lr
         self.ga = ga
@@ -33,6 +33,7 @@ class QT_Learner(Learner):
         return a
 
     def update_transition(self, s, a, r, s_t, done):
+        print("trained")
         q = (1 - self.lr) * self.get(s, a) + self.lr * (r + self.ga * self.max_q(s_t)[1] * done)
         self.put(s, a, q)
 
@@ -43,8 +44,8 @@ class QT_Learner(Learner):
         self.update_transition(s, a, r, s_, 0. if done else 1.)
         return s_, r, done
 
-# 0 for next, 6 for stop.
-# 1 ~ 5. 0 for stop, 1 for next.
+# action 2: 0 for stop, 1 for next.
+# space: 0 ~ 8 for , 8 for final.
 def init():
-    model = QT_Learner(2, 7)
+    model = QT_Learner(2, 9)
     return model

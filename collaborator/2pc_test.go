@@ -14,6 +14,7 @@ const defaultTimeOUt time.Duration = 100 * time.Millisecond
 
 func CollaboratorTestKit() (*CollaboratorStmt, []*cohorts.CohortStmt) {
 	stmt := &CollaboratorStmt{}
+	caID := "127.0.0.1:5001"
 	var Arg = []string{"*", "*", caID}
 	ch := make(chan bool)
 	go begin(stmt, Arg, ch)

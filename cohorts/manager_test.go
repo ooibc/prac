@@ -16,9 +16,9 @@ func CheckVal(coh *CohortManager, ans []int) {
 
 func TestConcurrent(t *testing.T) {
 	stmts := CohortsTestKit()
-	txn1 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.NoCFNoNF, OU_addrs)
+	txn1 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.NoCFNoNF, utils.OU_addrs)
 	stmts[0].Cohort.forTestPreRead(txn1)
-	txn2 := remote.NewRACTransaction(2, stmts[0].cohortID, rlsm.NoCFNoNF, OU_addrs)
+	txn2 := remote.NewRACTransaction(2, stmts[0].cohortID, rlsm.NoCFNoNF, utils.OU_addrs)
 	stmts[0].Cohort.forTestPreRead(txn2)
 	CheckVal(stmts[0].Cohort, []int{0, 1, 2, 3, 4})
 
@@ -52,9 +52,9 @@ func TestConcurrent(t *testing.T) {
 
 func TestNOCFNONF(t *testing.T) {
 	stmts := CohortsTestKit()
-	txn11 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.NoCFNoNF, OU_addrs)
+	txn11 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.NoCFNoNF, utils.OU_addrs)
 	stmts[0].Cohort.forTestPreRead(txn11)
-	txn12 := remote.NewRACTransaction(1, stmts[1].cohortID, rlsm.NoCFNoNF, OU_addrs)
+	txn12 := remote.NewRACTransaction(1, stmts[1].cohortID, rlsm.NoCFNoNF, utils.OU_addrs)
 	stmts[1].Cohort.forTestPreRead(txn12)
 	CheckVal(stmts[0].Cohort, []int{0, 1, 2, 3, 4})
 	CheckVal(stmts[1].Cohort, []int{0, 1, 2, 3, 4})
@@ -90,9 +90,9 @@ func TestNOCFNONF(t *testing.T) {
 
 func TestCFNONF(t *testing.T) {
 	stmts := CohortsTestKit()
-	txn11 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.CFNoNF, OU_addrs[:2])
+	txn11 := remote.NewRACTransaction(1, stmts[0].cohortID, rlsm.CFNoNF, utils.OU_addrs[:2])
 	stmts[0].Cohort.forTestPreRead(txn11)
-	txn12 := remote.NewRACTransaction(1, stmts[1].cohortID, rlsm.CFNoNF, OU_addrs[:2])
+	txn12 := remote.NewRACTransaction(1, stmts[1].cohortID, rlsm.CFNoNF, utils.OU_addrs[:2])
 	stmts[1].Cohort.forTestPreRead(txn12)
 	CheckVal(stmts[0].Cohort, []int{0, 1, 2, 3, 4})
 	CheckVal(stmts[1].Cohort, []int{0, 1, 2, 3, 4})

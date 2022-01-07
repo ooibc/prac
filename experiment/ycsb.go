@@ -98,7 +98,7 @@ func (c *YCSBClient) performTransactions(TID int, cohorts []string, kvD []opt.RA
 	}
 	txn := collaborator.NewDBTransaction(TID, 0, parts, c.from.ca.Manager)
 	txn.OptList = kvData
-	return c.from.ca.Manager.SubmitTxn(txn, constants.TPCC_Protocol, latency)
+	return c.from.ca.Manager.SubmitTxn(txn, constants.TPCC_Protocol, latency, nil)
 }
 
 func analysisYCSB(successes int, txnCount int, start time.Time, totalTimePerTxn time.Duration) {
@@ -136,7 +136,7 @@ func (stmt *YCSBStmt) startYCSBClient() {
 	for !stmt.Stopped() {
 		latency := time.Duration(0)
 		TID := collaborator.GetTxnID()
-		if client.performTransactions(TID, cohorts.OU_addrs, nil, &latency) {
+		if client.performTransactions(TID, utils.OU_addrs, nil, &latency) {
 			atomic.AddInt64(&stmt.latencySum, int64(latency))
 			atomic.AddInt32(&stmt.txnCount, 1)
 			atomic.AddInt32(&stmt.countCommitted, 1)
@@ -163,7 +163,7 @@ func (stmt *YCSBStmt) YCSB_Test() {
 	if utils.LocalTest {
 		stmt.ca, stmt.co = collaborator.CollaboratorBatchTestKit()
 	} else {
-		stmt.ca = collaborator.RemoteTestkit()
+		stmt.ca = collaborator.RemoteTestkit("10.184.0.2:2001")
 		stmt.co = nil
 	}
 	stmt.latencySum = 0

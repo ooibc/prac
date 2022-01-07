@@ -2,6 +2,7 @@ package collaborator
 
 import (
 	"github.com/allvphx/RAC/constants"
+	ds "github.com/allvphx/RAC/downserver"
 	"github.com/allvphx/RAC/opt"
 	"github.com/allvphx/RAC/remote"
 	"github.com/allvphx/RAC/rlsm"
@@ -115,14 +116,18 @@ func (ra *DBTransaction) Decide4RAC(txn *DBTransaction, isCommitted bool) bool {
 }
 
 // RACSubmit submit the write only transaction to the KVs with level 1 ~ 2.
-func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bool {
+func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction, ls *int64) bool {
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, Propose) {
 		return false
 	}
-	lev := ra.from.Lsm.Start(ra.participants)
+	lev, ts := ra.from.Lsm.Start(ra.participants)
+	lev = rlsm.MaxLevel(lev, rlsm.Level(constants.MinLevel))
+	if ls != nil {
+		*ls = int64(lev)
+	}
 
 	if lev == rlsm.CFNF {
-		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev))
+		utils.CheckError(ra.from.Lsm.Finish(ra.participants, nil, lev, ts))
 		if !ra.from.CheckAndChange(ra.TxnID, Propose, PreRead) {
 			return false
 		}
@@ -130,10 +135,10 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 	}
 	result := ra.RACPropose(write, lev)
 	if result == nil {
-		println("nil recived")
+		//		println("nil recived")
 		return false
 	}
-	err := ra.from.Lsm.Finish(ra.participants, result, lev)
+	err := ra.from.Lsm.Finish(ra.participants, result, lev, ts)
 	if !utils.Assert(err == nil, "The RLSM finish caught with error.") {
 		return false
 	}
@@ -169,5 +174,8 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction) bo
 
 	// TODO:future work: stable log for commit here.
 	ra.Decide4RAC(write, ok) // ok = commit
+	if ok {
+		ds.Add_th()
+	}
 	return ok
 }

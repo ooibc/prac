@@ -43,6 +43,7 @@ type TPCStmt struct {
 	txnCount   int32
 	success    int32
 	latencySum int64
+	levelSum   int64
 	startTime  time.Time
 	stop       int32
 }
@@ -88,15 +89,17 @@ func JPrint(v interface{}) {
 	fmt.Println(string(byt))
 }
 
-func analysisTPC(txnCnt int32, sucess int32, latencySum time.Duration, start time.Time) {
+func analysisTPC(txnCnt int32, sucess int32, latencySum time.Duration, levelSum int64, start time.Time) {
 	totalTime := time.Since(start)
 	msg := "count:" + strconv.Itoa(int(txnCnt)) + ";"
 	msg += "concurrency:" + strconv.Itoa(constants.CONCURRENCY) + ";"
 	msg += "success:" + strconv.Itoa(int(sucess)) + ";"
 	if txnCnt == 0 {
 		msg += "latency:nil;"
+		msg += "avglevel:nil;"
 	} else {
 		msg += "latency:" + time.Duration(latencySum.Nanoseconds()/int64(txnCnt)).String() + ";"
+		msg += "avglevel:" + fmt.Sprintf("%f", float64(levelSum)/float64(txnCnt)) + ";"
 	}
 	msg += "totalTime:" + totalTime.String() + ";"
 	fmt.Println(msg)
@@ -106,10 +109,12 @@ func (stmt *TPCStmt) logResults() {
 	analysisTPC(atomic.LoadInt32(&stmt.txnCount),
 		atomic.LoadInt32(&stmt.success),
 		time.Duration(atomic.LoadInt64(&stmt.latencySum)),
+		atomic.LoadInt64(&stmt.levelSum),
 		stmt.startTime)
 	stmt.startTime = time.Now()
 	atomic.StoreInt32(&stmt.txnCount, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
+	atomic.StoreInt64(&stmt.levelSum, 0)
 	atomic.StoreInt32(&stmt.success, 0)
 }
 
@@ -170,7 +175,7 @@ func (stmt *TPCStmt) TPCClient() {
 			tmp := &TPCOrder{}
 			utils.CheckError(copier.CopyWithOption(&tmp, stmt.GetOrder(), copier.Option{DeepCopy: true}))
 			if !stmt.Stopped() {
-				stmt.HandleOrder(client, tmp, &stmt.latencySum, &stmt.txnCount, &stmt.success)
+				stmt.HandleOrder(client, tmp, &stmt.latencySum, &stmt.levelSum, &stmt.txnCount, &stmt.success)
 			}
 			if count%20 == 10 && !stmt.Stopped() {
 				stmt.HandleOrderStatus(client)
@@ -188,21 +193,41 @@ func (stmt *TPCStmt) RunTPC() {
 	stmt.txnCount = 0
 	stmt.success = 0
 	stmt.latencySum = 0
+	stmt.levelSum = 0
 	stmt.startTime = time.Now()
 	for i := 0; i < constants.CONCURRENCY; i++ {
 		go stmt.TPCClient()
 		time.Sleep(2 * time.Millisecond)
 	}
 	utils.TPrintf("All clients Started")
-	time.Sleep(5 * time.Second)
+	if constants.ServerTimeOut < 0 {
+		time.Sleep(constants.WarmUpTime + 2*time.Duration(-constants.ServerTimeOut)*200*time.Millisecond)
+	} else if constants.NFInterval > 0 {
+		time.Sleep(constants.WarmUpTime + 2*time.Duration(constants.NFInterval)*200*time.Millisecond)
+	} else {
+		time.Sleep(constants.WarmUpTime)
+	}
 	atomic.StoreInt32(&stmt.txnCount, 0)
 	atomic.StoreInt32(&stmt.success, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
+	atomic.StoreInt64(&stmt.levelSum, 0)
 	stmt.startTime = time.Now()
-	for i := 0; i < 10; i++ {
-		time.Sleep(time.Second)
+	if constants.ServerTimeOut < 0 {
+		for i := 0; i < 16*-constants.ServerTimeOut; i++ {
+			time.Sleep(100 * time.Millisecond)
+			stmt.logResults()
+		}
+	} else if constants.NFInterval > 0 {
+		for i := 0; i < 16*constants.NFInterval; i++ {
+			time.Sleep(100 * time.Millisecond)
+			stmt.logResults()
+		}
+	} else {
+		for i := 0; i < 5; i++ {
+			time.Sleep(1 * time.Second)
+		}
+		stmt.logResults()
 	}
-	stmt.logResults()
 }
 
 func (stmt *TPCStmt) TPCC_Test(ca *collaborator.CollaboratorStmt) {
