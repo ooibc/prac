@@ -43,9 +43,9 @@ else:
 for id_ in config["collaborators"]:
     run_client_cmd = run_client_cmd + config["collaborators"][id_]
 
-
-def execute_cmd_in_remote(host, cmd):
-    cmd = "ssh " + "%s@%s" % ("allvphx", host) + " " + cmd
+# gcloud beta compute ssh --zone "asia-southeast1-a" "cohort1" -- '
+def execute_cmd_in_gcloud(zone, instance, cmd):
+    cmd = "gcloud beta compute ssh --zone " + "%s %s -- \'" % (zone, instance) + " " + cmd + "\'"
     #print(cmd)
     ssh = subprocess.Popen(cmd,
                            shell=True,
@@ -60,10 +60,9 @@ def run_task(cmd):
     return p
 
 
-def start_cohort(ext, service, r, minlevel, env, nf):
-    ip = ext.split(":")[0]
+def start_cohort(zone, instance, service, r, minlevel, env, nf):
     cmd = get_server_cmd(service, r, minlevel, env, nf)
-    return execute_cmd_in_remote(ip, cmd)
+    return execute_cmd_in_gcloud(zone, instance, cmd)
 
 def start_service_on_all(r, run_rl = False, time = 0, minlevel=1, env=25, nf=-1):
     if run_rl:
@@ -71,7 +70,7 @@ def start_service_on_all(r, run_rl = False, time = 0, minlevel=1, env=25, nf=-1)
     if local:
         return
     for id_ in config["cohorts"]:
-        pool.append(start_cohort(config["cohorts"][id_], config["cohorts"][id_], r, minlevel, env, nf))
+        pool.append(start_cohort(config["zones"][id_], config["instances"][id_], config["cohorts"][id_], r, minlevel, env, nf))
     print("remote started")
 
 def terminate_service():

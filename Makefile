@@ -9,11 +9,13 @@
 # sudo apt-get update
   #
   # sudo apt-get install docker-ce docker-ce-cli containerd.io
-# sudo docker pull lawyerphx/rac:v2
-# sudo docker run -dt --name="cohort" --network host lawyerphx/rac:v2
-# sudo docker run -it --name="collaborator" --network host lawyerphx/rac:v2
+# sudo docker pull lawyerphx/rac
+# sudo docker run -dt --name="cohort" --network host lawyerphx/rac
+# sudo docker run -it --name="collaborator" --network host lawyerphx/rac
 # sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr=10.170.0.2:2001
 # sudo docker exec -i collaborator make exp
+# sudo docker exec -it cohort vim ./constants/constants.go
+# sudo docker exec -it cohort make build
 
 all: build local ycsb tpc
 
@@ -60,7 +62,7 @@ test:
 	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -c=2000 -p=2pc
 
 quick:
-	@go run ./rac-server/main.go
+	@go run ./rac-server/main.go -local
 
 tpc-local-test:
 	@go test -v ./experiment/main_test.go ./experiment/main.go ./experiment/tpc.go -timeout 1h -test.run TestTPCCLocal
