@@ -167,7 +167,7 @@ def run_all_heu():
 
 if __name__ == '__main__':
     run_exp_dense("tpc", 3)
-    run_exp_dense("ycsb", 3)
+#    run_exp_dense("ycsb", 3) needs to change constants
     for r in range(1, 3):
         run_exp_dense("tpc", r, "rac")
     for r in range(4, 8):

@@ -31,8 +31,8 @@ clean:
 	@docker rmi $(docker images -aq)
 
 pack:
-	@docker build -t lawyerphx/rac:v2 -f ./Dockerfile .
-	@docker export -o rac.tar lawyerphx/rac:v2
+	@docker build -t lawyerphx/rac:latest -f ./Dockerfile .
+	@docker export -o rac.tar lawyerphx/rac:latest
 
 build:
 	@go build -o ./bin/rac-server ./rac-server/main.go
@@ -79,11 +79,10 @@ buildrpc:
 
 exp:
 	@make build
-	@python experiment/experiment.py
+	@python3 experiment/experiment.py
 
 down:
 	@python3 downserver/main.py 68
-
 tt:
 	@make build
 	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -r=2

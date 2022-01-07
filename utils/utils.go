@@ -15,7 +15,7 @@ const ShowWarn = false
 const Test = false
 const Level = false
 
-var OU_addrs = []string{"10.148.0.3:2001", "10.148.0.4:2001", "10.148.0.5:2001"}
+var OU_addrs = []string{"10.148.0.3:2001", "10.170.0.3:2001", "10.140.0.4:2001"}
 var LocalTest = false
 
 func SetLocal() {
