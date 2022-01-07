@@ -20,13 +20,13 @@
 all: build local ycsb tpc
 
 server:
-	@ssh allvphx@34.101.120.206
+	@gcloud beta compute ssh --zone "asia-southeast2-a" "allvphx@coordinator"  --project "primal-chariot-330902"
 c0:
-	@ssh allvphx@34.124.163.241
+	@gcloud beta compute ssh --zone "asia-southeast1-a" "allvphx@cohort1"  --project "primal-chariot-330902"
 c1:
-	@ssh allvphx@34.126.191.25
+	@gcloud beta compute ssh --zone "asia-east2-a" "allvphx@cohort2"  --project "primal-chariot-330902"
 c2:
-	@ssh allvphx@34.124.178.254
+	@gcloud beta compute ssh --zone "asia-east1-a" "allvphx@cohort3"  --project "primal-chariot-330902"
 
 clean:
 	@docker rm $(docker ps -aq)
@@ -92,3 +92,6 @@ tt:
 tmp:
 	@make build
 	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -nf=1 -tl=33 -d=0 -r=3
+
+show:
+	@tail -n 10 ./tmp/progress.log

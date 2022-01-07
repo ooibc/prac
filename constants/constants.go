@@ -52,7 +52,7 @@ var ConfigLocation = "./configs/remote.json"
 
 const DownBatchSize = 200
 const CONTENTION int = 90
-const WarmUpTime time.Duration = 2 * time.Second
+const WarmUpTime time.Duration = 5 * time.Second
 
 /*
 * 	ThreePC     = "3PC"

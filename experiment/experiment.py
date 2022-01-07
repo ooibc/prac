@@ -8,6 +8,7 @@ pool = []
 run_server = "sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr="
 run_rl_server_cmd = "python downserver/main.py "
 protocols = ["rac", "3pc", "2pc"]
+logf = open("./tmp/progress.log", "w")
 
 if local:
     run_client_cmd  = "./bin/rac-server -node=ca -local=true -addr="
@@ -19,7 +20,7 @@ def get_server_cmd(addr, r, minlevel, env, nf):
           " -r=" + str(r) + \
           " -tl=" + str(env) + \
           " -nf=" + str(nf) + \
-          "-ml=" + str(minlevel)
+          " -ml=" + str(minlevel)
     return cmd
 
 def get_client_cmd(bench, protocol, clients, r, file, env=20, alg=1, nf=-1, ml = 1):
@@ -46,7 +47,6 @@ for id_ in config["collaborators"]:
 # gcloud beta compute ssh --zone "asia-southeast1-a" "cohort1" -- '
 def execute_cmd_in_gcloud(zone, instance, cmd):
     cmd = "gcloud beta compute ssh --zone " + "%s %s -- \'" % (zone, instance) + " " + cmd + "\'"
-    #print(cmd)
     ssh = subprocess.Popen(cmd,
                            shell=True,
                            stdout=subprocess.PIPE,
@@ -54,7 +54,8 @@ def execute_cmd_in_gcloud(zone, instance, cmd):
     return ssh
 
 def run_task(cmd):
-    print(cmd)
+    print(cmd, file=logf)
+    logf.flush()
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                          shell=True, preexec_fn=os.setsid)
     return p
@@ -71,7 +72,6 @@ def start_service_on_all(r, run_rl = False, time = 0, minlevel=1, env=25, nf=-1)
         return
     for id_ in config["cohorts"]:
         pool.append(start_cohort(config["zones"][id_], config["instances"][id_], config["cohorts"][id_], r, minlevel, env, nf))
-    print("remote started")
 
 def terminate_service():
     global pool
@@ -172,3 +172,4 @@ if __name__ == '__main__':
     for r in range(4, 8):
         run_exp_dense("tpc", r, "rac")
     run_all_heu()
+    logf.close()
