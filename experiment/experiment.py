@@ -79,16 +79,23 @@ def terminate_service():
         p.wait()
     pool = []
 
-TestBatch = 5
+TestBatch = 1
+
+def delete_extra_zero(n):
+    if isinstance(n, int):
+        return str(n)
+    if isinstance(n, float):
+        n = str(n).rstrip('0')
+        if n.endswith('.'):
+            n = n.rstrip('.')
+        return n
+    return "nooo"
 
 def run_exp_dense(bench, r=3, proto = "all"):
     upper = 1000
-    if bench == "tpc":
-        upper += 500
-    upper = 1000 # for test network
-    l = [c for c in range(1000, upper+1, 50)]
+    l = [c for c in range(50, upper+1, 50)]
     for c in l:
-        filename = ">./tmp/%d/" % r + bench.upper() + str(c) + ".log"
+        filename = ">./tmp/" + delete_extra_zero(r) + "/" + bench.upper() + str(c) + ".log"
         if proto == "all":
             for po in protocols:
                 for each in range(TestBatch):
@@ -150,6 +157,11 @@ def run_exp_loose(bench, r, proto):
             if filename[1] == '.':
                 filename = ">" + filename
 
+def run_loose_heu():
+    for t in [1, 4, 16]:
+        for i in [1, 2, 4, 8, 16, 32, 64, 128]: #, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 48, 64, 96, 128]:
+            run_heu(i, -t)
+            run_heu(i, 33, nf=t)
 
 def run_all_heu():
     t = 1
@@ -165,11 +177,16 @@ def run_all_heu():
         t *= 2
 
 if __name__ == '__main__':
-    run_exp_dense("tpc", 3)
+#    run_exp_dense("tpc", 3)
 #    run_exp_dense("ycsb", 3) needs to change constants
-    for r in range(1, 3):
-        run_exp_dense("tpc", r, "rac")
-    for r in range(4, 8):
-        run_exp_dense("tpc", r, "rac")
-    run_all_heu()
-    logf.close()
+#    for r in range(1, 3):
+#        run_exp_dense("tpc", r, "rac")
+#    for r in range(4, 8):
+#        run_exp_dense("tpc", r, "rac")
+#    run_exp_loose("ycsb", 3, "tpc")
+#    run_exp_loose("ycsb", 3, "tpc")
+#    run_exp_loose("ycsb", 3, "tpc")
+#    for r in [0.5, 1.3, 1.6, 2.5, 3.5, 4.5, 5.5, 7, 8]:
+#        run_exp_dense("tpc", r, "rac")
+    run_loose_heu()
+#    logf.close()

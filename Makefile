@@ -16,6 +16,7 @@
 # sudo docker exec -i collaborator make exp
 # sudo docker exec -it cohort vim ./constants/constants.go
 # sudo docker exec -it cohort make build
+# gcloud compute scp --zone "asia-southeast2-a" "allvphx@coordinator" --recurse coordinator:~/rac/tmp ~/results
 
 all: build local ycsb tpc
 
