@@ -141,7 +141,6 @@ func (stmt *YCSBStmt) startYCSBClient() {
 			atomic.AddInt32(&stmt.txnCount, 1)
 			atomic.AddInt32(&stmt.countCommitted, 1)
 		} else {
-			atomic.AddInt64(&stmt.latencySum, int64(latency))
 			atomic.AddInt32(&stmt.txnCount, 1)
 		}
 		time.Sleep(10 * time.Millisecond)

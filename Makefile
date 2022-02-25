@@ -92,7 +92,7 @@ tt:
 
 tmp:
 	@make build
-	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -nf=1 -tl=33 -d=0 -r=3
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=ycsb -p=pac -c=800 -r=3
 
 show:
 	@tail -n 10 ./tmp/progress.log

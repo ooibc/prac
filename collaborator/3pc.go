@@ -131,27 +131,27 @@ func (ra *DBTransaction) ThreePCSubmit(read *DBTransaction, write *DBTransaction
 	if !ra.from.CheckAndChange(ra.TxnID, PreRead, PreWrite) {
 		return false
 	}
-	ok := ra.PreWrite43PC(write) // blocking 2 delays.
+	ok := ra.PreWrite43PC(write)
 	if !ok {
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed at pre-write")
 		if !ra.from.CheckAndChange(ra.TxnID, PreWrite, AgAborted) {
-			ra.Decide43PC(write, false) // blocking 2 delays.
+			ra.Decide42PC(write, false)
 			return false
 		}
 	} else if !ra.from.CheckAndChange(ra.TxnID, PreWrite, AgCommitted) {
-		ra.Decide43PC(write, false) // blocking 2 delays.
+		ra.Decide42PC(write, false) // blocking 2 delays.
 		return false
 	}
 
-	ok = ra.Agree43PC(write, ok) // blocking 2 delays.
+	ok = ra.Agree43PC(write, ok)
 	if !ok {
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed at agree")
 		if !ra.from.CheckAndChange(ra.TxnID, AgAborted, Aborted) {
-			ra.Decide43PC(write, false) // blocking 2 delays.
+			ra.Decide42PC(write, false) // blocking 2 delays.
 			return false
 		}
 	} else if !ra.from.CheckAndChange(ra.TxnID, AgCommitted, Committed) {
-		ra.Decide43PC(write, false) // blocking 2 delays.
+		ra.Decide42PC(write, false) // blocking 2 delays.
 		return false
 	}
 	ra.Decide43PC(write, ok) // It does not matter if the decide is finished since the agree is correct.
