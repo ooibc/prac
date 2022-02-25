@@ -43,7 +43,6 @@ type TPCStmt struct {
 	txnCount   int32
 	failS      int32
 	success    int32
-	failS      int32
 	latencySum int64
 	levelSum   int64
 	startTime  time.Time
