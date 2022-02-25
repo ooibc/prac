@@ -122,7 +122,7 @@ func (c *TPCStmt) newOrder(client *TPCClient, order *TPCOrder, parts []string, l
 }
 
 // HandleOrder handle an Order from tpcc-generator
-func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *int64, levelSum *int64, txnCount, success, failS *int32) bool {
+func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *int64, levelSum *int64, txnCount, success *int32, failS *int32) bool {
 	exist := make(map[int]bool)
 	parts := make([]string, 0)
 	rand.Seed(time.Now().Unix())
@@ -147,13 +147,14 @@ func (c *TPCStmt) HandleOrder(client *TPCClient, order *TPCOrder, latencySum *in
 		atomic.AddInt64(latencySum, int64(latency))
 		if levelS < 0 {
 			levelS *= -1
-			atomic.AddInt32(failS , 1)
+			atomic.AddInt32(failS, 1)
 		}
 		atomic.AddInt64(levelSum, levelS)
 		atomic.AddInt32(txnCount, 1)
 		atomic.AddInt32(success, 1)
 	} else {
 		utils.TPrintf("NewOrder Failed")
+		atomic.AddInt64(latencySum, int64(latency))
 		if levelS < 0 {
 			levelS *= -1
 			atomic.AddInt32(failS, 1)

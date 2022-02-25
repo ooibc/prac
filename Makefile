@@ -9,22 +9,25 @@
 # sudo apt-get update
   #
   # sudo apt-get install docker-ce docker-ce-cli containerd.io
-# sudo docker pull lawyerphx/rac:v2
-# sudo docker run -dt --name="cohort" --network host lawyerphx/rac:v2
-# sudo docker run -it --name="collaborator" --network host lawyerphx/rac:v2
+# sudo docker pull lawyerphx/rac
+# sudo docker run -dt --name="cohort" --network host lawyerphx/rac
+# sudo docker run -it --name="collaborator" --network host lawyerphx/rac
 # sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr=10.170.0.2:2001
 # sudo docker exec -i collaborator make exp
+# sudo docker exec -it cohort vim ./constants/constants.go
+# sudo docker exec -it cohort make build
+# gcloud compute scp --zone "asia-southeast2-a" "allvphx@coordinator" --recurse coordinator:~/rac/tmp ~/results
 
 all: build local ycsb tpc
 
 server:
-	@ssh allvphx@34.101.120.206
+	@gcloud beta compute ssh --zone "asia-southeast2-a" "allvphx@coordinator"  --project "primal-chariot-330902"
 c0:
-	@ssh allvphx@34.124.163.241
+	@gcloud beta compute ssh --zone "asia-southeast1-a" "allvphx@cohort1"  --project "primal-chariot-330902"
 c1:
-	@ssh allvphx@34.126.191.25
+	@gcloud beta compute ssh --zone "asia-east2-a" "allvphx@cohort2"  --project "primal-chariot-330902"
 c2:
-	@ssh allvphx@34.124.178.254
+	@gcloud beta compute ssh --zone "asia-east1-a" "allvphx@cohort3"  --project "primal-chariot-330902"
 
 clean:
 	@docker rm $(docker ps -aq)
@@ -60,7 +63,7 @@ test:
 	@./bin/rac-server -node=ca -bench=tpc -addr=127.0.0.1:5001 -c=2000 -p=2pc
 
 quick:
-	@go run ./rac-server/main.go
+	@go run ./rac-server/main.go -local
 
 tpc-local-test:
 	@go test -v ./experiment/main_test.go ./experiment/main.go ./experiment/tpc.go -timeout 1h -test.run TestTPCCLocal
@@ -89,7 +92,7 @@ tt:
 
 tmp:
 	@make build
-	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 -bench=tpc -p=rac -c=800 -nf=1 -tl=33 -d=0 -r=3
+	@./bin/rac-server -node=ca -addr=127.0.0.1:5001 --local -bench=tpc -p=3pc -c=800 -r=3
 
 show:
 	@tail -n 10 ./tmp/progress.log

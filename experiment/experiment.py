@@ -8,6 +8,7 @@ pool = []
 run_server = "sudo docker exec -i cohort ./bin/rac-server -node=co -preload -addr="
 run_rl_server_cmd = "python3 downserver/main.py "
 protocols = ["rac", "3pc", "2pc"]
+logf = open("./tmp/progress.log", "w")
 
 logf = open("./tmp/progress.log", "w")
 
@@ -48,8 +49,11 @@ for id_ in config["collaborators"]:
 # gcloud beta compute ssh --zone "asia-southeast1-a" "cohort1" -- '
 def execute_cmd_in_gcloud(zone, instance, cmd):
     cmd = "gcloud beta compute ssh --zone " + "%s %s -- \'" % (zone, instance) + " " + cmd + "\'"
+<<<<<<< HEAD
     #print(cmd, file=logf)
     #logf.flush()
+=======
+>>>>>>> 9dbe44f83c714d2d37880c3fbc2f4efe688141e7
     ssh = subprocess.Popen(cmd,
                            shell=True,
                            stdout=subprocess.PIPE,
@@ -75,8 +79,11 @@ def start_service_on_all(r, run_rl = False, time = 0, minlevel=1, env=25, nf=-1)
         return
     for id_ in config["cohorts"]:
         pool.append(start_cohort(config["zones"][id_], config["instances"][id_], config["cohorts"][id_], r, minlevel, env, nf))
+<<<<<<< HEAD
     #print("remote started", file=logf)
     #logf.flush()
+=======
+>>>>>>> 9dbe44f83c714d2d37880c3fbc2f4efe688141e7
 
 def terminate_service():
     global pool
@@ -84,7 +91,11 @@ def terminate_service():
         p.wait()
     pool = []
 
+<<<<<<< HEAD
 TestBatch = 10
+=======
+TestBatch = 1
+>>>>>>> 9dbe44f83c714d2d37880c3fbc2f4efe688141e7
 
 def delete_extra_zero(n):
     if isinstance(n, int):
@@ -95,13 +106,19 @@ def delete_extra_zero(n):
             n = n.rstrip('.')
         return n
     return "nooo"
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9dbe44f83c714d2d37880c3fbc2f4efe688141e7
 
 def run_exp_dense(bench, r=3, proto = "all"):
     upper = 1000
     l = [c for c in range(50, upper+1, 50)]
     for c in l:
+<<<<<<< HEAD
         filename = ">./tmp/%d/" % r + bench.upper() + str(c) + ".log"
+=======
+>>>>>>> 9dbe44f83c714d2d37880c3fbc2f4efe688141e7
         filename = ">./tmp/" + delete_extra_zero(r) + "/" + bench.upper() + str(c) + ".log"
         if proto == "all":
             for po in protocols:
@@ -162,6 +179,11 @@ def run_exp_loose(bench, r):
                 if filename[1] == '.':
                     filename = ">" + filename
 
+def run_loose_heu():
+    for t in [1, 4, 16]:
+        for i in [1, 2, 4, 8, 16, 32, 64, 128]: #, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 48, 64, 96, 128]:
+            run_heu(i, -t)
+            run_heu(i, 33, nf=t)
 
 def run_all_heu():
     t = 1
@@ -183,11 +205,16 @@ def run_loose_heu():
             run_heu(i, 33, nf=t)
 
 if __name__ == '__main__':
+#    run_exp_dense("tpc", 3)
+#    run_exp_dense("ycsb", 3) needs to change constants
+#    for r in range(1, 3):
+#        run_exp_dense("tpc", r, "rac")
+#    for r in range(4, 8):
+#        run_exp_dense("tpc", r, "rac")
+    run_exp_loose("ycsb", 3, "pac")
+#    run_exp_loose("ycsb", 3, "tpc")
+#    run_exp_loose("ycsb", 3, "tpc")
+#    for r in [0.5, 1.3, 1.6, 2.5, 3.5, 4.5, 5.5, 7, 8]:
+#        run_exp_dense("tpc", r, "rac")
     run_loose_heu()
-   # run_exp_loose("ycsb", 3)
-   # run_exp_dense("tpc", 3)
-   #run_exp_dense("ycsb", 3) needs to change constants
-   # for r in [8]:
-   #     run_exp_dense("tpc", r, "rac")
-    #run_all_heu()
-    logf.close()
+#    logf.close()

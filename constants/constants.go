@@ -70,6 +70,9 @@ func SetProtocol(pro string) {
 	if pro == "rac" {
 		pro = "RAC"
 	}
+	if pro == "pac" {
+		pro = "G-PAC"
+	}
 	if pro != "2PC" && pro != "3PC" && pro != "RAC" {
 		pro = "2PC"
 	}

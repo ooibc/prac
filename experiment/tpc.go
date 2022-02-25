@@ -41,6 +41,7 @@ type TPCStmt struct {
 	orderLine  int32
 	OrderPoll  []*TPCOrder
 	txnCount   int32
+	failS      int32
 	success    int32
 	failS      int32
 	latencySum int64
@@ -116,6 +117,7 @@ func (stmt *TPCStmt) logResults() {
 		atomic.LoadInt32(&stmt.failS))
 	stmt.startTime = time.Now()
 	atomic.StoreInt32(&stmt.txnCount, 0)
+	atomic.StoreInt32(&stmt.failS, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
 	atomic.StoreInt64(&stmt.levelSum, 0)
 	atomic.StoreInt32(&stmt.success, 0)
