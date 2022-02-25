@@ -31,6 +31,7 @@ const (
 	ThreePC     = "3PC"
 	TwoPC       = "2PC"
 	RobAdapC    = "RAC"
+	CPAC        = "C-PAC"
 )
 
 type RACManager struct {
@@ -192,6 +193,8 @@ func (c *RACManager) SubmitTxn(txn *DBTransaction, protocol string, latency *tim
 		return txn.TwoPCSubmit(nil, txn)
 	case ThreePC:
 		return txn.ThreePCSubmit(nil, txn)
+	case CPAC:
+		return txn.PACSubmit(nil, txn)
 	default:
 		utils.Assert(false, "Incorrect protocol "+protocol)
 		return false

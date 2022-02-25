@@ -183,7 +183,7 @@ if __name__ == '__main__':
 #        run_exp_dense("tpc", r, "rac")
 #    for r in range(4, 8):
 #        run_exp_dense("tpc", r, "rac")
-#    run_exp_loose("ycsb", 3, "tpc")
+    run_exp_loose("ycsb", 3, "pac")
 #    run_exp_loose("ycsb", 3, "tpc")
 #    run_exp_loose("ycsb", 3, "tpc")
 #    for r in [0.5, 1.3, 1.6, 2.5, 3.5, 4.5, 5.5, 7, 8]:
