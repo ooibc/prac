@@ -20,12 +20,12 @@ const RACVT string = "RAC_vote"
 const FINISH string = "transaction_finished"
 
 // contention ~ C(con, 2)
-const OptEps = 2 * time.Millisecond                                       // the concurrency cost, it should increase with concurrency.
-const MsgUpperBound = time.Duration(1.2 * 90 * float64(time.Millisecond)) // between Kvs.
+const OptEps = 10 * time.Millisecond                                       // the concurrency cost, it should increase with concurrency.
+const MsgUpperBound = time.Duration(1.2 * 70 * float64(time.Millisecond)) // between Kvs.
 const LockUpperBound = 5 * time.Millisecond
 const UniverseRetryCount = 3
 
-var NUM_ELEMENTS int = 200000
+var NUM_ELEMENTS int = 10000
 
 // for ycsb = 10000
 // for tpc = 200000
@@ -50,9 +50,9 @@ var TestNF int32 = 0
 var MinLevel = 0
 var ConfigLocation = "./configs/remote.json"
 
-const DownBatchSize = 200
+const DownBatchSize = 60
 const CONTENTION int = 90
-const WarmUpTime time.Duration = 2 * time.Second
+const WarmUpTime time.Duration = 5 * time.Second
 
 /*
 * 	ThreePC     = "3PC"

@@ -42,6 +42,7 @@ type TPCStmt struct {
 	OrderPoll  []*TPCOrder
 	txnCount   int32
 	success    int32
+	failS      int32
 	latencySum int64
 	levelSum   int64
 	startTime  time.Time
@@ -89,11 +90,12 @@ func JPrint(v interface{}) {
 	fmt.Println(string(byt))
 }
 
-func analysisTPC(txnCnt int32, sucess int32, latencySum time.Duration, levelSum int64, start time.Time) {
+func analysisTPC(txnCnt int32, sucess int32, latencySum time.Duration, levelSum int64, start time.Time, failS int32) {
 	totalTime := time.Since(start)
 	msg := "count:" + strconv.Itoa(int(txnCnt)) + ";"
 	msg += "concurrency:" + strconv.Itoa(constants.CONCURRENCY) + ";"
 	msg += "success:" + strconv.Itoa(int(sucess)) + ";"
+	msg += "prec:" + strconv.Itoa(int(failS)) + ";"
 	if txnCnt == 0 {
 		msg += "latency:nil;"
 		msg += "avglevel:nil;"
@@ -110,12 +112,14 @@ func (stmt *TPCStmt) logResults() {
 		atomic.LoadInt32(&stmt.success),
 		time.Duration(atomic.LoadInt64(&stmt.latencySum)),
 		atomic.LoadInt64(&stmt.levelSum),
-		stmt.startTime)
+		stmt.startTime,
+		atomic.LoadInt32(&stmt.failS))
 	stmt.startTime = time.Now()
 	atomic.StoreInt32(&stmt.txnCount, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
 	atomic.StoreInt64(&stmt.levelSum, 0)
 	atomic.StoreInt32(&stmt.success, 0)
+	atomic.StoreInt32(&stmt.failS, 0)
 }
 
 func (c *TPCStmt) GetOrder() *TPCOrder {
@@ -175,7 +179,7 @@ func (stmt *TPCStmt) TPCClient() {
 			tmp := &TPCOrder{}
 			utils.CheckError(copier.CopyWithOption(&tmp, stmt.GetOrder(), copier.Option{DeepCopy: true}))
 			if !stmt.Stopped() {
-				stmt.HandleOrder(client, tmp, &stmt.latencySum, &stmt.levelSum, &stmt.txnCount, &stmt.success)
+				stmt.HandleOrder(client, tmp, &stmt.latencySum, &stmt.levelSum, &stmt.txnCount, &stmt.success, &stmt.failS)
 			}
 			if count%20 == 10 && !stmt.Stopped() {
 				stmt.HandleOrderStatus(client)
@@ -195,6 +199,7 @@ func (stmt *TPCStmt) RunTPC() {
 	stmt.latencySum = 0
 	stmt.levelSum = 0
 	stmt.startTime = time.Now()
+	stmt.failS = 0
 	for i := 0; i < constants.CONCURRENCY; i++ {
 		go stmt.TPCClient()
 		time.Sleep(2 * time.Millisecond)
@@ -211,6 +216,7 @@ func (stmt *TPCStmt) RunTPC() {
 	atomic.StoreInt32(&stmt.success, 0)
 	atomic.StoreInt64(&stmt.latencySum, 0)
 	atomic.StoreInt64(&stmt.levelSum, 0)
+	atomic.StoreInt32(&stmt.failS, 0)
 	stmt.startTime = time.Now()
 	if constants.ServerTimeOut < 0 {
 		for i := 0; i < 16*-constants.ServerTimeOut; i++ {

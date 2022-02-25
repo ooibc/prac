@@ -146,6 +146,9 @@ func (ra *DBTransaction) RACSubmit(read *DBTransaction, write *DBTransaction, ls
 	ok := result.DecideAllCommit()
 	if correctness := result.Correct(); !correctness {
 		// trigger the blocking decide.
+		if ls != nil {
+			*ls = -(*ls)
+		}
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed with validation error")
 		//// blocking commit ////
 		utils.DPrintf("Txn" + strconv.Itoa(ra.TxnID) + ": failed at propose")
