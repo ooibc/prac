@@ -121,7 +121,6 @@ func (stmt *TPCStmt) logResults() {
 	atomic.StoreInt64(&stmt.latencySum, 0)
 	atomic.StoreInt64(&stmt.levelSum, 0)
 	atomic.StoreInt32(&stmt.success, 0)
-	atomic.StoreInt32(&stmt.failS, 0)
 }
 
 func (c *TPCStmt) GetOrder() *TPCOrder {
