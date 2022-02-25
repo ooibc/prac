@@ -10,6 +10,7 @@ import (
 )
 
 // Here is a centralized version of PAC. We fix the leader to header node.
+// PAC comes to this version if one node is always selected as the leader.
 
 func (ra *DBTransaction) check4PAC(isCheckSucceed bool) bool {
 	ra.from.LockPool[ra.TxnID].Lock()
