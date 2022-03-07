@@ -1,10 +1,10 @@
-## RAC
+## PRAC
 
 A distributed kv-store with adaptive atomic commit protocol supported.
 
 It supports
 
-- 2PC, 3PC, and RAC ACPs.
+- 2PC, 3PC, C-PAC, and PRAC ACPs.
 - TPC-C, and Micro-benchmark Test.
 
 
@@ -30,8 +30,6 @@ For collaborator node
 sudo docker run -dt --name="collaborator" --network host lawyerphx/rac
 ```
 
-
-
 #### Test
 
 A simple experiment program could be found in `experiment/experiment/py`
@@ -48,6 +46,11 @@ For local test, please set the `LocalTest` in `utils\utils.go` to True and run:
 make local
 ```
 
-This would add a 100ms delay to localhost for test.
+This would add a 20ms delay to localhost for local test.
 
+For remote test, please update the links in `./configs/remote.json` and `./utils/utils.go` and run
+
+```shell
+make exp
+```
 
