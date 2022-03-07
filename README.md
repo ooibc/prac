@@ -54,4 +54,4 @@ For remote test, please update the links in `./configs/remote.json` and `./utils
 make exp
 ```
 
-You can find your raw data log [here](https://github.com/nusdbsystem/prac/blob/heuristic_transition/data_log.zip).
+You can find our raw data log [here](https://github.com/nusdbsystem/prac/blob/heuristic_transition/data_log.zip).
